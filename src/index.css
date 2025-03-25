@@ -1,0 +1,52 @@
+/* 基础样式 */
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+.config-tree {
+  width: 250px;
+  background: #f5f5f5;
+  padding: 20px;
+  border-right: 1px solid #ddd;
+}
+
+.config-tree.error {
+  color: #ff4d4f;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.dashboard {
+  flex: 1;
+  padding: 20px;
+}
+
+.metric-item {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+}
+
+.config-card {
+  background: white;
+  padding: 15px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+}
+
+.tree-node {
+  margin: 8px 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: white;
+}
+
+.tree-node:hover {
+  background: #f0f0f0;
+} 
