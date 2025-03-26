@@ -2,13 +2,156 @@
 .app {
   display: flex;
   min-height: 100vh;
+  background: #f5f5f5;
 }
 
-.config-tree {
+.config-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+}
+
+/* 侧边栏样式 */
+.config-sidebar {
   width: 250px;
-  background: #f5f5f5;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+}
+
+.sidebar-header {
   padding: 20px;
-  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.sidebar-menu {
+  padding: 16px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.menu-item {
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+}
+
+.menu-item:hover {
+  background: #f5f5f5;
+}
+
+.menu-item.selected {
+  background: #e6f7ff;
+  border-right: 3px solid #1890ff;
+}
+
+.menu-item-name {
+  color: #333;
+  font-size: 14px;
+}
+
+/* 内容区域样式 */
+.config-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.config-list {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.config-list h2 {
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 24px;
+}
+
+.list-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.config-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.detail-group {
+  margin: 16px 0;
+}
+
+.detail-group-title {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-item {
+  display: flex;
+  margin: 8px 0;
+  padding: 4px 0;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #666;
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  color: #333;
+  flex: 1;
+  word-break: break-all;
+}
+
+/* 加载和错误状态 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 16px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #ff4d4f;
+  font-size: 16px;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.no-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 16px;
 }
 
 .config-tree.error {
@@ -32,21 +175,250 @@
   margin-bottom: 15px;
 }
 
-.config-card {
-  background: white;
-  padding: 15px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 15px;
-}
-
 .tree-node {
   margin: 8px 0;
-  padding: 4px 8px;
+  padding: 8px;
   border-radius: 4px;
   background: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .tree-node:hover {
-  background: #f0f0f0;
+  background: #f8f9fa;
+}
+
+.tree-node.selected {
+  background: #e3f2fd;
+  border-left: 3px solid #2196f3;
+}
+
+.node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.node-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.node-type {
+  font-size: 12px;
+  color: #666;
+  background: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.node-child {
+  margin-left: 16px;
+  border-left: 2px solid #e9ecef;
+  padding-left: 8px;
+}
+
+/* 配置编辑表单样式 */
+.config-edit-container {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.config-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #333;
+}
+
+.form-control {
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-control:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.form-control:focus {
+  border-color: #1890ff;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+}
+
+.nested-field {
+  margin-left: 16px;
+  margin-top: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  color: #666;
+}
+
+.btn-cancel:hover {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.btn-save {
+  background: #1890ff;
+  border: 1px solid #1890ff;
+  color: #fff;
+}
+
+.btn-save:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.btn-edit {
+  padding: 8px 16px;
+  background: #1890ff;
+  border: 1px solid #1890ff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-edit:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* 配置详情卡片样式 */
+.config-detail-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.config-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.config-detail-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.config-detail-content {
+  padding: 20px;
+}
+
+.config-detail-item {
+  display: flex;
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.config-detail-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.config-detail-label {
+  width: 100px;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.config-detail-value {
+  flex: 1;
+  color: #333;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.btn-edit {
+  padding: 6px 12px;
+  background: #1890ff;
+  border: 1px solid #1890ff;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-edit:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* 配置列表样式 */
+.config-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.config-list h2 {
+  margin-bottom: 24px;
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
 } 

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { wsClient } from './services/wsClient';
 import './index.css';  // 添加样式导入
+import './styles/config.css';  // 添加 config.css 导入
 
 // 调试环境变量
 console.log('Environment variables:', {
