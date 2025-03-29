@@ -3,7 +3,11 @@ import { MetricItem } from './MetricItem';
 import { wsClient } from '../services/wsClient';
 import { SystemMetrics } from '../types/metrics';
 
-const Dashboard = () => {
+interface DashboardProps {
+  onLogout: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [metrics, setMetrics] = useState({
     connections: 0,
     queueSize: 0,

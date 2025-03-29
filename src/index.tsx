@@ -14,9 +14,6 @@ console.log('Environment variables:', {
 const wsUrl = process.env.REACT_APP_WS_URL || 'ws://127.0.0.1:8899';
 console.log('Using WebSocket URL:', wsUrl);
 
-// 初始化WebSocket连接
-wsClient.connect(wsUrl);
-
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
