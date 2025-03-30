@@ -79,50 +79,40 @@ export class WSClient {
           reject(error);
         };
 
-        this.ws.onmessage = (event) => {
+        // 设置消息处理器
+        const messageHandler = (event: MessageEvent) => {
           try {
-            console.log('Received WebSocket message:', event.data);
-            const msg = JSON.parse(event.data);
-            console.log('Parsed message:', msg);
-            
-            // 处理认证响应
-            if (msg.action === 'authenticate_response') {
-              if (msg.success) {
-                console.log('Authentication successful');
+            const message = JSON.parse(event.data);
+            console.log('认证过程收到消息:', message);
+
+            if (message.action === 'authenticate_response') {
+              if (message.success) {
+                console.log('认证成功');
                 this.isAuthenticated = true;
                 this.isConnected = true;
                 this.hasInitialized = true;
                 this.reconnectAttempts = 0;
+                // 移除临时消息处理器
+                this.ws!.removeEventListener('message', messageHandler);
+                // 设置正常的消息处理器
+                this.ws!.onmessage = this.handleMessage;
                 resolve();
               } else {
-                console.error('Authentication failed:', msg.error);
+                console.error('认证失败:', message.error);
                 this.isAuthenticated = false;
                 this.disconnect();
-                reject(new Error(msg.error || '认证失败'));
+                reject(new Error(message.error || '认证失败'));
               }
-              return;
-            }
-
-            // 处理配置数据
-            if (msg.DBs !== undefined) {
-              // 这是配置元数据
-              console.log('收到配置元数据');
-              this.listeners.get('ConfigMeta')?.forEach(fn => fn(msg));
-              return;
-            }
-
-            // 处理其他消息
-            const handler = this.messageHandlers.get(msg.action);
-            if (handler) {
-              handler(msg);
-            } else {
-              console.warn(`No handler for message action: ${msg.action}`);
             }
           } catch (error) {
-            console.error('Error processing message:', error);
+            console.error('处理认证消息时出错:', error);
             reject(error);
           }
         };
+
+        // 先添加临时消息处理器来处理认证响应
+        this.ws.addEventListener('message', messageHandler);
+
       } catch (error) {
         reject(error);
       }
@@ -233,41 +223,7 @@ export class WSClient {
         }
       };
 
-      this.ws.onmessage = (event) => {
-        try {
-          console.log('Received WebSocket message:', event.data);
-          const msg = JSON.parse(event.data);
-          console.log('Parsed message:', msg);
-          
-          // 检查消息格式
-          if (msg.type && msg.data) {
-            // 如果是配置更新消息
-            if (CONFIG_TYPES.includes(msg.type)) {
-              console.log(`Handling ${msg.type} config update:`, msg.data);
-              this.listeners.get(msg.type)?.forEach(fn => fn(msg.data));
-              return;
-            }
-            
-            // 标准格式：包含 type 和 data 字段
-            if (this.listeners.has(msg.type)) {
-              this.listeners.get(msg.type)?.forEach(fn => fn(msg.data));
-            } else {
-              console.warn(`No listeners for message type: ${msg.type}`);
-            }
-          } else if (msg.DBs) {
-            // 直接返回配置数据的情况
-            console.log('Handling direct config data');
-            this.listeners.get('ConfigMeta')?.forEach(fn => fn(msg));
-          } else if (msg.action === 'config_delete') {
-            console.log('Handling config delete:', msg);
-            // 处理删除逻辑
-          } else {
-            console.warn('Unknown message format:', msg);
-          }
-        } catch (error) {
-          console.error('Error processing message:', error);
-        }
-      };
+      this.ws.onmessage = this.handleMessage;
 
       this.ws.onerror = (error) => {
         console.error('WebSocket Error:', error);
@@ -298,18 +254,38 @@ export class WSClient {
       console.log('收到WebSocket消息:', message);
       console.log('当前所有订阅:', Array.from(this.listeners.keys()));
 
+      // 处理认证响应
+      if (message.action === 'authenticate_response') {
+        if (message.success) {
+          console.log('认证成功');
+          this.isAuthenticated = true;
+          this.isConnected = true;
+          this.hasInitialized = true;
+          this.reconnectAttempts = 0;
+        } else {
+          console.error('认证失败:', message.error);
+          this.isAuthenticated = false;
+          this.disconnect();
+        }
+        return;
+      }
+
       // 处理配置更新消息
       if (message.action === 'config_update') {
-        console.log('检测到config_update消息');
+        console.log('检测到config_update消息:', message);
         const handlers = this.listeners.get('config_update');
-        console.log('config_update处理器:', handlers?.length || 0);
         if (handlers) {
-          handlers.forEach(handler => {
-            console.log('执行config_update处理器');
-            handler(message);
-          });
-        } else {
-          console.log('未找到config_update处理器');
+          handlers.forEach(handler => handler(message));
+        }
+        return;
+      }
+
+      // 处理配置元数据
+      if (message.DBs !== undefined) {
+        console.log('检测到配置元数据');
+        const handlers = this.listeners.get('ConfigMeta');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
         }
         return;
       }
@@ -318,14 +294,8 @@ export class WSClient {
       if (message.type) {
         console.log('检测到类型消息:', message.type);
         const handlers = this.listeners.get(message.type);
-        console.log(`${message.type}处理器:`, handlers?.length || 0);
         if (handlers) {
-          handlers.forEach(handler => {
-            console.log(`执行${message.type}处理器`);
-            handler(message.data);
-          });
-        } else {
-          console.log(`未找到${message.type}处理器`);
+          handlers.forEach(handler => handler(message.data));
         }
       }
     } catch (error) {

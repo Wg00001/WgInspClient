@@ -35,6 +35,8 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       processedData.Cron.Duration = parseInt(processedData.Cron.Duration, 10) || 0;
     }
     onSave(processedData);
+    // 直接关闭编辑模式，因为会很快收到 config_update 消息
+    onCancel();
   };
 
   const handleDelete = () => {
