@@ -29,91 +29,24 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'inspectors', name: '巡检配置', type: 'Common' }
 ];
 
-const ConfigTree = () => {
+interface ConfigTreeProps {
+  onLogout: () => void;
+}
+
+const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [configData, setConfigData] = useState<ConfigMeta | null>(null);
   const [selectedMenu, setSelectedMenu] = useState<string>('dbs');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 处理配置更新的函数
-  const handleConfigUpdate = (type: string, data: any) => {
-    if (!configData) return;
-
-    const newConfigData = { ...configData };
-    
-    switch (type) {
-      case 'Log':
-        // 更新日志配置
-        newConfigData.Logs = newConfigData.Logs.map(log => 
-          log.Identity === data.Identity ? data : log
-        );
-        if (!newConfigData.Logs.find(log => log.Identity === data.Identity)) {
-          newConfigData.Logs.push(data);
-        }
-        break;
-      case 'DB':
-        // 更新数据库配置
-        newConfigData.DBs = newConfigData.DBs.map(db => 
-          db.Identity === data.Identity ? data : db
-        );
-        if (!newConfigData.DBs.find(db => db.Identity === data.Identity)) {
-          newConfigData.DBs.push(data);
-        }
-        break;
-      case 'Alert':
-        // 更新告警配置
-        newConfigData.Alerts = newConfigData.Alerts.map(alert => 
-          alert.Identity === data.Identity ? data : alert
-        );
-        if (!newConfigData.Alerts.find(alert => alert.Identity === data.Identity)) {
-          newConfigData.Alerts.push(data);
-        }
-        break;
-      case 'Task':
-        // 更新任务配置
-        newConfigData.Tasks = newConfigData.Tasks.map(task => 
-          task.Identity === data.Identity ? data : task
-        );
-        if (!newConfigData.Tasks.find(task => task.Identity === data.Identity)) {
-          newConfigData.Tasks.push(data);
-        }
-        break;
-      case 'Agent':
-        // 更新Agent配置
-        newConfigData.Agent = data;
-        break;
-      case 'AgentTask':
-        // 更新Agent任务配置
-        newConfigData.AgentTasks = newConfigData.AgentTasks.map(task => 
-          task.Identity === data.Identity ? data : task
-        );
-        if (!newConfigData.AgentTasks.find(task => task.Identity === data.Identity)) {
-          newConfigData.AgentTasks.push(data);
-        }
-        break;
-      case 'KBase':
-        // 更新知识库配置
-        newConfigData.KnowledgeBases = newConfigData.KnowledgeBases.map(kb => 
-          kb.Identity === data.Identity ? data : kb
-        );
-        if (!newConfigData.KnowledgeBases.find(kb => kb.Identity === data.Identity)) {
-          newConfigData.KnowledgeBases.push(data);
-        }
-        break;
-      case 'Inspector':
-        // 更新巡检配置
-        if (newConfigData.Insp && newConfigData.Insp.AllInsp) {
-          newConfigData.Insp.AllInsp = newConfigData.Insp.AllInsp.map(insp => 
-            insp.ID === data.ID ? data : insp
-          );
-          if (!newConfigData.Insp.AllInsp.find(insp => insp.ID === data.ID)) {
-            newConfigData.Insp.AllInsp.push(data);
-          }
-        }
-        break;
-    }
-
-    setConfigData(newConfigData);
+  // 初始化请求函数
+  const initializeData = () => {
+    console.log('正在初始化配置数据...');
+    wsClient.send({
+      action: 'config_get',
+      config_type: 'Meta',
+      config_data: null
+    });
   };
 
   useEffect(() => {
@@ -125,42 +58,96 @@ const ConfigTree = () => {
 
     const handleConfigMeta = (meta: ConfigMeta) => {
       try {
-        console.log('Received config meta:', meta);
+        console.log('接收到配置元数据:', meta);
         if (meta && typeof meta === 'object' && 'DBs' in meta) {
           setConfigData(meta);
           setError(null);
         } else {
-          console.error('Invalid config meta format:', meta);
+          console.error('无效的配置元数据格式:', meta);
           setError('配置数据格式无效');
         }
       } catch (err) {
-        console.error('Error processing config meta:', err);
+        console.error('处理配置元数据时出错:', err);
         handleError(err);
       } finally {
         setIsLoading(false);
       }
     };
 
+    const handleConfigUpdate = (message: { type: string; data: any[] }) => {
+      console.log('ConfigTree接收到配置更新:', message);
+      if (!configData) {
+        console.log('configData为空，跳过更新');
+        return;
+      }
+
+      const newConfigData = { ...configData };
+      console.log('更新前的配置数据:', newConfigData);
+      
+      switch (message.type) {
+        case 'DB':
+          newConfigData.DBs = message.data;
+          break;
+        case 'Log':
+          newConfigData.Logs = message.data;
+          break;
+        case 'Alert':
+          newConfigData.Alerts = message.data;
+          break;
+        case 'Task':
+          console.log('更新任务配置数据:', message.data);
+          newConfigData.Tasks = message.data;
+          break;
+        case 'Agent':
+          if (message.data.length === 1) {
+            newConfigData.Agent = message.data[0];
+          }
+          break;
+        case 'AgentTask':
+          newConfigData.AgentTasks = message.data;
+          break;
+        case 'KBase':
+          newConfigData.KnowledgeBases = message.data;
+          break;
+        case 'Inspector':
+          if (newConfigData.Insp) {
+            newConfigData.Insp.AllInsp = message.data;
+          }
+          break;
+      }
+
+      console.log('更新后的配置数据:', newConfigData);
+      console.log('当前选中的菜单:', selectedMenu);
+      setConfigData(newConfigData);
+    };
+
     // 订阅配置元数据
     wsClient.subscribe<ConfigMeta>('ConfigMeta', handleConfigMeta);
 
-    // 订阅各种配置类型的更新
-    const configTypes = ['Log', 'DB', 'Alert', 'Task', 'Agent', 'AgentTask', 'KBase', 'Inspector'];
-    configTypes.forEach(type => {
-      wsClient.subscribe(type, (data: any) => handleConfigUpdate(type, data));
+    // 订阅配置更新消息
+    wsClient.subscribe('config_update', (message: any) => {
+      console.log('ConfigTree收到config_update消息:', message);
+      handleConfigUpdate({ type: message.type, data: message.data });
     });
 
-    // 请求配置数据
-    wsClient.send({
-      action: 'config_get',
-      config_type: 'Meta'
+    // 订阅配置保存响应
+    wsClient.subscribe('config_save', (message: { config_type: string; config_data: any }) => {
+      console.log('ConfigTree收到config_save响应:', message);
+      if (message.config_data) {
+        handleConfigUpdate({ 
+          type: message.config_type, 
+          data: Array.isArray(message.config_data) ? message.config_data : [message.config_data] 
+        });
+      }
     });
+
+    // 发送初始化请求
+    initializeData();
 
     return () => {
       wsClient.unsubscribe('ConfigMeta');
-      configTypes.forEach(type => {
-        wsClient.unsubscribe(type);
-      });
+      wsClient.unsubscribe('config_update');
+      wsClient.unsubscribe('config_save');
     };
   }, []);
 
@@ -316,6 +303,11 @@ const ConfigTree = () => {
               <span className="menu-item-name">{item.name}</span>
             </div>
           ))}
+        </div>
+        <div className="sidebar-footer">
+          <button onClick={onLogout} className="logout-button">
+            退出
+          </button>
         </div>
       </div>
       <div className="config-content">

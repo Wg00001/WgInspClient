@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { wsClient } from '../services/wsClient';
-import { BaseConfig } from '../types/config';
+import { BaseConfig, ConfigType } from '../types/config';
 import { ConfigEditor } from './ConfigEditor';
 
-const ConfigCard = ({ config }: { config: BaseConfig }) => {
+const ConfigCard = ({ config, type }: { config: BaseConfig; type: ConfigType }) => {
   const [editMode, setEditMode] = useState(false);
   const [draft, setDraft] = useState(config);
   
   const handleSave = () => {
     wsClient.send({
       action: 'config_save',
-      config_type: config.type,
+      config_type: type,
       config_data: draft
     });
     setEditMode(false);

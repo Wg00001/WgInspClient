@@ -13,6 +13,14 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleChange = (field: string, value: any) => {
+    if (field === 'Cron' && typeof value === 'object' && 'Duration' in value) {
+      // 确保 Duration 是数字类型
+      const duration = parseInt(value.Duration, 10);
+      value = {
+        ...value,
+        Duration: isNaN(duration) ? 0 : duration
+      };
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -21,7 +29,12 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    // 在提交前确保 Cron.Duration 是数字
+    const processedData = { ...formData };
+    if (processedData.Cron?.Duration) {
+      processedData.Cron.Duration = parseInt(processedData.Cron.Duration, 10) || 0;
+    }
+    onSave(processedData);
   };
 
   const handleDelete = () => {
@@ -40,11 +53,11 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   const renderField = (field: string, value: any, label: string) => {
     if (field === 'Identity') {
       return (
-        <div className="form-group">
+        <div className="form-group" key={field}>
           <label>{label}</label>
           <input
             type="text"
-            value={value}
+            value={value || ''}
             disabled
             className="form-control"
           />
@@ -54,7 +67,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
     if (Array.isArray(value)) {
       return (
-        <div className="form-group">
+        <div className="form-group" key={field}>
           <label>{label}</label>
           <input
             type="text"
@@ -68,7 +81,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
     if (typeof value === 'object' && value !== null) {
       return (
-        <div className="form-group">
+        <div className="form-group" key={field}>
           <label>{label}</label>
           {Object.entries(value).map(([key, val]) => (
             <div key={key} className="nested-field">
@@ -86,11 +99,11 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     }
 
     return (
-      <div className="form-group">
+      <div className="form-group" key={field}>
         <label>{label}</label>
         <input
           type="text"
-          value={value}
+          value={value || ''}
           onChange={(e) => handleChange(field, e.target.value)}
           className="form-control"
         />
@@ -100,11 +113,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
   return (
     <form onSubmit={handleSubmit} className="config-edit-form">
-      {Object.entries(config).map(([field, value]) => (
-        <div key={field}>
-          {renderField(field, value, field)}
-        </div>
-      ))}
+      {Object.entries(formData).map(([field, value]) => renderField(field, value, field))}
       <div className="form-actions">
         {onDelete && (
           <button 

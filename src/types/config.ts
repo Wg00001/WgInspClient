@@ -1,16 +1,47 @@
 export type Identity = string;
 
-export interface DefaultConfig {
+export interface InitConfig {
   ConfigReader: string;
   ConfigParser: string;
   ClientDriver: string;
   ClientURL: string;
+  Option: Record<string, any>;
+}
+
+export interface CommonConfigGroup {
+  DBs: DBConfig[];
+  Logs: LogConfig[];
+  Alerts: AlertConfig[];
+}
+
+export interface TaskConfigGroup {
+  Tasks: TaskConfig[];
+}
+
+export interface AgentConfigGroup {
+  Agent: AgentConfig;
+  AgentTasks: AgentTaskConfig[];
+  KnowledgeBases: KnowledgeBaseConfig[];
+}
+
+export interface ConfigMeta extends CommonConfigGroup, TaskConfigGroup, AgentConfigGroup {
+  Insp: InspTree;
+}
+
+export interface ConfigIndex {
+  Default: InitConfig;
+  Task: Record<Identity, TaskConfig>;
+  DB: Record<Identity, DBConfig>;
+  Log: Record<Identity, LogConfig>;
+  Alert: Record<Identity, AlertConfig>;
+  Agent: AgentConfig;
+  AgentTask: Record<Identity, AgentTaskConfig>;
+  KBase: Record<Identity, KnowledgeBaseConfig>;
 }
 
 export interface BaseConfig {
   Identity: Identity;
   Driver?: string;
-  type: ConfigType;
 }
 
 export interface DBConfig extends BaseConfig {
@@ -27,9 +58,9 @@ export interface AlertConfig extends BaseConfig {
 
 export interface Cron {
   CronTab: string;
-  Duration: number; // time.Duration in nanoseconds
+  Duration: number; // 这里需要注意：服务端是 time.Duration，我们用 number 表示纳秒数
   AtTime: string[] | null;
-  Weekly: number[] | null; // time.Weekday values
+  Weekly: number[] | null; // time.Weekday 值 (0-6)
   Monthly: number[] | null;
 }
 
@@ -52,12 +83,12 @@ export interface AgentConfig {
 }
 
 export interface LogFilter {
-  StartTime: string; // time.Time as ISO string
-  EndTime: string; // time.Time as ISO string
-  TaskNames: Identity[];
-  DBNames: Identity[];
-  TaskIDs: string[];
-  InspNames: Identity[];
+  StartTime: string; // ISO 格式的时间字符串
+  EndTime: string; // ISO 格式的时间字符串
+  TaskNames: Identity[] | null;
+  DBNames: Identity[] | null;
+  TaskIDs: string[] | null;
+  InspNames: Identity[] | null;
 }
 
 export interface AgentTaskConfig extends BaseConfig {
@@ -90,49 +121,13 @@ export interface InspTree {
   AllInsp: InspectorConfig[];
 }
 
-export interface CommonConfigGroup {
-  DBs: DBConfig[];
-  Logs: LogConfig[];
-  Alerts: AlertConfig[];
-}
-
-export interface TaskConfigGroup {
-  Tasks: TaskConfig[];
-}
-
-export interface AgentConfigGroup {
-  Agent: AgentConfig;
-  AgentTasks: AgentTaskConfig[];
-  KnowledgeBases: KnowledgeBaseConfig[];
-}
-
-export interface ConfigMeta {
-  DBs: DBConfig[];
-  Logs: LogConfig[];
-  Alerts: AlertConfig[];
-  Tasks: TaskConfig[];
-  Agent: AgentConfig;
-  AgentTasks: AgentTaskConfig[];
-  KnowledgeBases: KnowledgeBaseConfig[];
-  Insp: InspTree;
-}
-
-export interface ConfigIndex {
-  Default: DefaultConfig;
-  Task: Record<Identity, TaskConfig>;
-  DB: Record<Identity, DBConfig>;
-  Log: Record<Identity, LogConfig>;
-  Alert: Record<Identity, AlertConfig>;
-  Agent: AgentConfig;
-  AgentTask: Record<Identity, AgentTaskConfig>;
-  KBase: Record<Identity, KnowledgeBaseConfig>;
-}
-
 export type ConfigType = 'DB' | 'Task' | 'Log' | 'Alert' | 'Agent' | 'Common';
 
 export interface ClientMessage {
   action: string;
-  config_type: ConfigType;
+  config_type?: string;
   config_data?: any;
-  config_id?: string; // 新增，用于删除操作
+  old_password?: string;
+  new_password?: string;
+  auth_token?: string;
 } 

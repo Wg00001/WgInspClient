@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import ConfigTree from './components/ConfigTree';
 import { wsClient } from './services/wsClient';
 import './styles/login.css';
 
@@ -9,7 +9,9 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log('App mounted, checking authentication state');
     const storedAuth = localStorage.getItem('isAuthenticated');
+    console.log('Stored auth state:', storedAuth);
     if (storedAuth === 'true') {
       const username = localStorage.getItem('username');
       const password = localStorage.getItem('password');
@@ -28,10 +30,13 @@ const App: React.FC = () => {
 
   const handleLogin = async (username: string, password: string) => {
     try {
+      console.log('Attempting to login...');
       await wsClient.connectWithAuth(username, password);
+      console.log('WebSocket connection successful');
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('username', username);
       localStorage.setItem('password', password);
+      console.log('Authentication state updated, setting isAuthenticated to true');
       setIsAuthenticated(true);
     } catch (error) {
       console.error('Login failed:', error);
@@ -64,7 +69,9 @@ const App: React.FC = () => {
           path="/"
           element={
             isAuthenticated ? (
-              <Dashboard onLogout={handleLogout} />
+              <div className="app-container">
+                <ConfigTree onLogout={handleLogout} />
+              </div>
             ) : (
               <Navigate to="/login" replace />
             )

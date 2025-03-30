@@ -7,11 +7,11 @@ type ServerMessage = {
 
 export interface ClientMessage {
   action: string;
-  old_password?: string;
-  new_password?: string;
-  config_id?: string;
   config_type?: string;
   config_data?: any;
+  old_password?: string;
+  new_password?: string;
+  auth_token?: string;
 }
 
 const RECONNECT_INTERVALS = [1000, 3000, 5000, 10000];
@@ -40,6 +40,7 @@ export class WSClient {
   private connectionUrl: string | null = null;
   private subscriptions = new Set<string>();
   private hasInitialized = false;
+  private isAuthenticated = false;
 
   constructor() {
     this.messageHandlers = new Map();
@@ -49,39 +50,77 @@ export class WSClient {
     this.credentials = { username, password };
     return new Promise((resolve, reject) => {
       try {
-        const authHeader = `Basic ${btoa(`${username}:${password}`)}`;
         const wsUrl = process.env.REACT_APP_WS_URL || 'ws://127.0.0.1:9999';
         
-        // 使用 URL 参数传递认证信息
-        const wsUrlWithAuth = `${wsUrl}?Authorization=${encodeURIComponent(authHeader)}`;
-        this.ws = new WebSocket(wsUrlWithAuth);
+        this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected with authentication');
-          this.reconnectAttempts = 0;
-          this.isConnected = true;
-          this.hasInitialized = true;
-          resolve();
+          console.log('WebSocket connected, sending authentication');
+          // 发送认证消息
+          const authHeader = `Basic ${btoa(`${username}:${password}`)}`;
+          this.send({
+            action: 'authenticate',
+            auth_token: authHeader
+          });
         };
 
         this.ws.onclose = () => {
           console.log('WebSocket connection closed');
+          console.log('Connection state:', this.ws?.readyState);
+          this.isAuthenticated = false;
           this.handleReconnect();
         };
 
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
+          console.log('Connection state:', this.ws?.readyState);
           this.isConnected = false;
+          this.isAuthenticated = false;
           reject(error);
         };
 
         this.ws.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          const handler = this.messageHandlers.get(message.action);
-          if (handler) {
-            handler(message);
-          } else {
-            console.warn(`No handler for message action: ${message.action}`);
+          try {
+            console.log('Received WebSocket message:', event.data);
+            const msg = JSON.parse(event.data);
+            console.log('Parsed message:', msg);
+            
+            // 处理认证响应
+            if (msg.action === 'authenticate_response') {
+              if (msg.success) {
+                console.log('Authentication successful');
+                this.isAuthenticated = true;
+                this.isConnected = true;
+                this.hasInitialized = true;
+                this.reconnectAttempts = 0;
+                resolve();
+              } else {
+                console.error('Authentication failed:', msg.error);
+                this.isAuthenticated = false;
+                this.disconnect();
+                reject(new Error(msg.error || '认证失败'));
+              }
+              return;
+            }
+
+            // 处理配置数据
+            if (msg.DBs !== undefined) {
+              // 这是配置元数据
+              console.log('收到配置元数据');
+              this.listeners.get('ConfigMeta')?.forEach(fn => fn(msg));
+              return;
+            }
+
+            // 处理其他消息
+            const handler = this.messageHandlers.get(msg.action);
+            if (handler) {
+              handler(msg);
+            } else {
+              console.warn(`No handler for message action: ${msg.action}`);
+            }
+          } catch (error) {
+            console.error('Error processing message:', error);
+            reject(error);
           }
         };
       } catch (error) {
@@ -252,6 +291,47 @@ export class WSClient {
       this.isConnected = false;
     }
   }
+
+  private handleMessage = (event: MessageEvent) => {
+    try {
+      const message = JSON.parse(event.data);
+      console.log('收到WebSocket消息:', message);
+      console.log('当前所有订阅:', Array.from(this.listeners.keys()));
+
+      // 处理配置更新消息
+      if (message.action === 'config_update') {
+        console.log('检测到config_update消息');
+        const handlers = this.listeners.get('config_update');
+        console.log('config_update处理器:', handlers?.length || 0);
+        if (handlers) {
+          handlers.forEach(handler => {
+            console.log('执行config_update处理器');
+            handler(message);
+          });
+        } else {
+          console.log('未找到config_update处理器');
+        }
+        return;
+      }
+
+      // 处理其他消息类型
+      if (message.type) {
+        console.log('检测到类型消息:', message.type);
+        const handlers = this.listeners.get(message.type);
+        console.log(`${message.type}处理器:`, handlers?.length || 0);
+        if (handlers) {
+          handlers.forEach(handler => {
+            console.log(`执行${message.type}处理器`);
+            handler(message.data);
+          });
+        } else {
+          console.log(`未找到${message.type}处理器`);
+        }
+      }
+    } catch (error) {
+      console.error('处理WebSocket消息时出错:', error);
+    }
+  };
 }
 
 export const wsClient = new WSClient(); 
