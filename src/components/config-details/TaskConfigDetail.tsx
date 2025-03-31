@@ -6,10 +6,12 @@ interface TaskConfigDetailProps {
   config: TaskConfig;
   onEdit: (config: TaskConfig) => void;
   onDelete?: () => void;
+  onCreate?: (config: TaskConfig) => void;
 }
 
-const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onDelete }) => {
+const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onDelete, onCreate }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -22,6 +24,19 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
   const handleSave = (updatedConfig: TaskConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+  };
+
+  const handleCreate = () => {
+    setIsCreating(true);
+  };
+
+  const handleCreateSave = (newConfig: TaskConfig) => {
+    onCreate?.(newConfig);
+    setIsCreating(false);
+  };
+
+  const handleCreateCancel = () => {
+    setIsCreating(false);
   };
 
   if (isEditing) {
@@ -38,11 +53,41 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
     );
   }
 
+  if (isCreating) {
+    return (
+      <div className="config-edit-container">
+        <ConfigEditForm
+          config={{
+            Identity: '',
+            Driver: '',
+            Cron: {
+              CronTab: '',
+              Duration: 0,
+              AtTime: null,
+              Weekly: null,
+              Monthly: null
+            },
+            AllInspector: false,
+            LogID: '',
+            TargetDB: [],
+            Todo: [],
+            NotTodo: null
+          }}
+          onCancel={handleCreateCancel}
+          onSave={handleCreateSave}
+          type="Task"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
-        <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <div className="header-buttons">
+          <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        </div>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

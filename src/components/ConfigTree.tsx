@@ -38,6 +38,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [selectedMenu, setSelectedMenu] = useState<string>('dbs');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [creatingType, setCreatingType] = useState<ConfigType | null>(null);
 
   // 初始化请求函数
   const initializeData = () => {
@@ -169,14 +171,67 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     });
   };
 
+  const handleCreate = (type: ConfigType) => {
+    setIsCreating(true);
+    setCreatingType(type);
+  };
+
+  const handleCreateSave = (newConfig: any) => {
+    if (creatingType) {
+      console.log('创建新配置:', { type: creatingType, config: newConfig });
+      // 先发送创建请求
+      wsClient.send({
+        action: 'config_save',
+        config_type: creatingType,
+        config_data: newConfig
+      });
+      
+      // 等待服务端响应后再关闭创建表单
+      const handleConfigSave = (message: any) => {
+        if (message.config_type === creatingType) {
+          setIsCreating(false);
+          setCreatingType(null);
+          // 取消订阅，避免重复处理
+          wsClient.unsubscribe('config_save');
+        }
+      };
+      
+      // 订阅配置保存响应
+      wsClient.subscribe('config_save', handleConfigSave);
+    }
+  };
+
+  const handleCreateCancel = () => {
+    setIsCreating(false);
+    setCreatingType(null);
+  };
+
   const renderConfigContent = () => {
     if (!configData) return null;
+
+    if (isCreating && creatingType) {
+      return (
+        <div className="config-edit-container">
+          <ConfigEditForm
+            config={getEmptyConfig(creatingType)}
+            onCancel={handleCreateCancel}
+            onSave={handleCreateSave}
+            type={creatingType}
+          />
+        </div>
+      );
+    }
 
     switch (selectedMenu) {
       case 'dbs':
         return (
           <div className="config-list">
-            <h2>数据库配置</h2>
+            <div className="page-header">
+              <h2>数据库配置</h2>
+              <button onClick={() => handleCreate('DB')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.DBs.map((db, index) => (
               <DBConfigDetail
                 key={index}
@@ -190,7 +245,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'logs':
         return (
           <div className="config-list">
-            <h2>日志配置</h2>
+            <div className="page-header">
+              <h2>日志配置</h2>
+              <button onClick={() => handleCreate('Log')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.Logs.map((log, index) => (
               <LogConfigDetail
                 key={index}
@@ -204,7 +264,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'alerts':
         return (
           <div className="config-list">
-            <h2>告警配置</h2>
+            <div className="page-header">
+              <h2>告警配置</h2>
+              <button onClick={() => handleCreate('Alert')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.Alerts.map((alert, index) => (
               <AlertConfigDetail
                 key={index}
@@ -218,7 +283,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'tasks':
         return (
           <div className="config-list">
-            <h2>任务配置</h2>
+            <div className="page-header">
+              <h2>任务配置</h2>
+              <button onClick={() => handleCreate('Task')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.Tasks.map((task, index) => (
               <TaskConfigDetail
                 key={index}
@@ -243,7 +313,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'agent-tasks':
         return (
           <div className="config-list">
-            <h2>Agent任务配置</h2>
+            <div className="page-header">
+              <h2>Agent任务配置</h2>
+              <button onClick={() => handleCreate('AgentTask')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.AgentTasks.map((task, index) => (
               <AgentTaskConfigDetail
                 key={index}
@@ -257,7 +332,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'knowledge-bases':
         return (
           <div className="config-list">
-            <h2>知识库配置</h2>
+            <div className="page-header">
+              <h2>知识库配置</h2>
+              <button onClick={() => handleCreate('KBase')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.KnowledgeBases.map((kb, index) => (
               <KBaseConfigDetail
                 key={index}
@@ -271,7 +351,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'inspectors':
         return (
           <div className="config-list">
-            <h2>巡检配置</h2>
+            <div className="page-header">
+              <h2>巡检配置</h2>
+              <button onClick={() => handleCreate('Inspector')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.Insp.AllInsp.map((insp, index) => (
               <InspectorConfigDetail
                 key={index}
@@ -284,6 +369,107 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         );
       default:
         return null;
+    }
+  };
+
+  const getEmptyConfig = (type: ConfigType): any => {
+    switch (type) {
+      case 'DB':
+        return {
+          Identity: '',
+          Driver: '',
+          DSN: ''
+        };
+      case 'Log':
+        return {
+          Identity: '',
+          Driver: '',
+          Header: {}
+        };
+      case 'Alert':
+        return {
+          Identity: '',
+          Driver: '',
+          Header: {}
+        };
+      case 'Task':
+        return {
+          Identity: '',
+          Driver: '',
+          Cron: {
+            CronTab: '',
+            Duration: 0,
+            AtTime: null,
+            Weekly: null,
+            Monthly: null
+          },
+          AllInspector: false,
+          LogID: '',
+          TargetDB: [],
+          Todo: [],
+          NotTodo: null
+        };
+      case 'Agent':
+        return {
+          Identity: '',
+          Driver: '',
+          Url: '',
+          ApiKey: '',
+          Model: '',
+          Temperature: 0,
+          SystemMessage: ''
+        };
+      case 'AgentTask':
+        return {
+          Identity: '',
+          Driver: '',
+          Cron: {
+            CronTab: '',
+            Duration: 0,
+            AtTime: null,
+            Weekly: null,
+            Monthly: null
+          },
+          LogID: '',
+          LogFilter: {
+            StartTime: '',
+            EndTime: '',
+            TaskNames: null,
+            DBNames: null,
+            TaskIDs: null,
+            InspNames: null
+          },
+          AlertID: '',
+          KBase: [],
+          KBaseResults: 0,
+          KBaseMaxLen: 0,
+          SystemMessage: ''
+        };
+      case 'KBase':
+        return {
+          Identity: '',
+          Driver: '',
+          Value: {
+            collection: '',
+            path: '',
+            embedding: {
+              driver: '',
+              baseurl: '',
+              model: ''
+            }
+          }
+        };
+      case 'Inspector':
+        return {
+          ID: '',
+          Name: '',
+          SQL: '',
+          AlertID: '',
+          AlertWhen: '',
+          Children: []
+        };
+      default:
+        return {};
     }
   };
 

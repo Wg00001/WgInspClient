@@ -173,4 +173,36 @@
 .btn-confirm-delete:hover {
   background-color: #ff7875;
   border-color: #ff7875;
+}
+
+.btn-create {
+  background-color: white;
+  color: #52c41a;
+  border: 1px solid #52c41a;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-create:hover {
+  background-color: #52c41a;
+  color: white;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.page-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 20px;
+  font-weight: 500;
 } 

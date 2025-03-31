@@ -42,7 +42,9 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
     <div className="config-detail-card">
       <div className="config-detail-header">
         <h3>Agent 配置</h3>
-        <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <div className="header-buttons">
+          <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        </div>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

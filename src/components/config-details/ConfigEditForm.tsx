@@ -60,7 +60,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
           <input
             type="text"
             value={value || ''}
-            disabled
+            onChange={(e) => handleChange(field, e.target.value)}
             className="form-control"
           />
         </div>

@@ -121,7 +121,7 @@ export interface InspTree {
   AllInsp: InspectorConfig[];
 }
 
-export type ConfigType = 'DB' | 'Task' | 'Log' | 'Alert' | 'Agent' | 'Common';
+export type ConfigType = 'DB' | 'Task' | 'Log' | 'Alert' | 'Agent' | 'Common' | 'AgentTask' | 'KBase' | 'Inspector';
 
 export interface ClientMessage {
   action: string;
