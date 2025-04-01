@@ -34,6 +34,11 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     if (processedData.Cron?.Duration) {
       processedData.Cron.Duration = parseInt(processedData.Cron.Duration, 10) || 0;
     }
+    // 验证 Identity 格式
+    if (processedData.Identity && !/^[a-z0-9-_]+$/.test(processedData.Identity)) {
+      alert('Identity 只能包含小写字母、数字、连字符(-)和下划线(_)');
+      return;
+    }
     onSave(processedData);
     // 直接关闭编辑模式，因为会很快收到 config_update 消息
     onCancel();

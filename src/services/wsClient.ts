@@ -270,20 +270,20 @@ export class WSClient {
         return;
       }
 
-      // 处理配置更新消息
-      if (message.action === 'config_update') {
-        console.log('检测到config_update消息:', message);
-        const handlers = this.listeners.get('config_update');
+      // 处理配置元数据
+      if (message.action === 'config_get' && message.config_type === 'Meta') {
+        console.log('检测到配置元数据');
+        const handlers = this.listeners.get('ConfigMeta');
         if (handlers) {
           handlers.forEach(handler => handler(message));
         }
         return;
       }
 
-      // 处理配置元数据
-      if (message.DBs !== undefined) {
-        console.log('检测到配置元数据');
-        const handlers = this.listeners.get('ConfigMeta');
+      // 处理配置更新消息
+      if (message.action === 'config_update') {
+        console.log('检测到config_update消息:', message);
+        const handlers = this.listeners.get('config_update');
         if (handlers) {
           handlers.forEach(handler => handler(message));
         }

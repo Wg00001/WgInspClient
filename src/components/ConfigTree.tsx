@@ -52,31 +52,34 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   };
 
   useEffect(() => {
+    console.log('ConfigTree useEffect triggered');
     const handleError = (error: any) => {
       console.error('ConfigTree error:', error);
       setError('加载配置失败，请检查网络连接');
       setIsLoading(false);
     };
 
-    const handleConfigMeta = (meta: ConfigMeta) => {
+    const handleConfigMeta = (meta: any) => {
       try {
         console.log('接收到配置元数据:', meta);
-        if (meta && typeof meta === 'object' && 'DBs' in meta) {
-          setConfigData(meta);
+        if (meta && meta.success && meta.config_data) {
+          console.log('配置数据有效，更新状态');
+          setConfigData(meta.config_data);
           setError(null);
         } else {
           console.error('无效的配置元数据格式:', meta);
-          setError('配置数据格式无效');
+          setError(meta.message || '配置数据格式无效');
         }
       } catch (err) {
         console.error('处理配置元数据时出错:', err);
         handleError(err);
       } finally {
+        console.log('设置加载状态为 false');
         setIsLoading(false);
       }
     };
 
-    const handleConfigUpdate = (message: { type: string; data: any[] }) => {
+    const handleConfigUpdate = (message: { config_type: string; config_data: any[] }) => {
       console.log('ConfigTree接收到配置更新:', message);
       if (!configData) {
         console.log('configData为空，跳过更新');
@@ -86,34 +89,34 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       const newConfigData = { ...configData };
       console.log('更新前的配置数据:', newConfigData);
       
-      switch (message.type) {
+      switch (message.config_type) {
         case 'DB':
-          newConfigData.DBs = message.data;
+          newConfigData.DBs = message.config_data;
           break;
         case 'Log':
-          newConfigData.Logs = message.data;
+          newConfigData.Logs = message.config_data;
           break;
         case 'Alert':
-          newConfigData.Alerts = message.data;
+          newConfigData.Alerts = message.config_data;
           break;
         case 'Task':
-          console.log('更新任务配置数据:', message.data);
-          newConfigData.Tasks = message.data;
+          console.log('更新任务配置数据:', message.config_data);
+          newConfigData.Tasks = message.config_data;
           break;
         case 'Agent':
-          if (message.data.length === 1) {
-            newConfigData.Agent = message.data[0];
+          if (message.config_data.length === 1) {
+            newConfigData.Agent = message.config_data[0];
           }
           break;
         case 'AgentTask':
-          newConfigData.AgentTasks = message.data;
+          newConfigData.AgentTasks = message.config_data;
           break;
         case 'KBase':
-          newConfigData.KnowledgeBases = message.data;
+          newConfigData.KnowledgeBases = message.config_data;
           break;
         case 'Inspector':
           if (newConfigData.Insp) {
-            newConfigData.Insp.AllInsp = message.data;
+            newConfigData.Insp.AllInsp = message.config_data;
           }
           break;
       }
@@ -129,7 +132,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     // 订阅配置更新消息
     wsClient.subscribe('config_update', (message: any) => {
       console.log('ConfigTree收到config_update消息:', message);
-      handleConfigUpdate({ type: message.type, data: message.data });
+      handleConfigUpdate({ config_type: message.type, config_data: message.data });
     });
 
     // 订阅配置保存响应
@@ -137,8 +140,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       console.log('ConfigTree收到config_save响应:', message);
       if (message.config_data) {
         handleConfigUpdate({ 
-          type: message.config_type, 
-          data: Array.isArray(message.config_data) ? message.config_data : [message.config_data] 
+          config_type: message.config_type, 
+          config_data: Array.isArray(message.config_data) ? message.config_data : [message.config_data] 
         });
       }
     });

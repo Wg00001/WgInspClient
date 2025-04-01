@@ -10,6 +10,14 @@ interface AgentConfigDetailProps {
 
 const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [configData, setConfigData] = useState<AgentConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleError = (error: any) => {
+    console.error('Error:', error);
+    setError('处理配置时发生错误');
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -22,6 +30,26 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
   const handleSave = (updatedConfig: AgentConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+  };
+
+  const handleConfigMeta = (meta: any) => {
+    try {
+      console.log('接收到配置元数据:', meta);
+      if (meta && meta.success && meta.config_data) {
+        console.log('配置数据有效，更新状态');
+        setConfigData(meta.config_data);
+        setError(null);
+      } else {
+        console.error('无效的配置元数据格式:', meta);
+        setError(meta.message || '配置数据格式无效');
+      }
+    } catch (err) {
+      console.error('处理配置元数据时出错:', err);
+      handleError(err);
+    } finally {
+      console.log('设置加载状态为 false');
+      setIsLoading(false);
+    }
   };
 
   if (isEditing) {
