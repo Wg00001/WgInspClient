@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { TaskConfig } from '../../types/config';
+import React, { useState, useEffect } from 'react';
+import { TaskConfig, ConfigMeta } from '../../types/config';
 import ConfigEditForm from './ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface TaskConfigDetailProps {
   config: TaskConfig;
@@ -12,6 +13,8 @@ interface TaskConfigDetailProps {
 const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onDelete, onCreate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [creatingType, setCreatingType] = useState<string | null>(null);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -30,13 +33,69 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
     setIsCreating(true);
   };
 
-  const handleCreateSave = (newConfig: TaskConfig) => {
-    onCreate?.(newConfig);
-    setIsCreating(false);
+  const handleCreateSave = (newConfig: any) => {
+    if (creatingType) {
+      console.log('创建新配置:', { type: creatingType, config: newConfig });
+      // 发送创建请求
+      wsClient.send({
+        action: 'config_save',  // 使用 config_save 而不是 config_update
+        config_type: creatingType,
+        config_data: newConfig  // 确保传入新的配置数据
+      });
+      
+      // 等待服务端响应后再关闭创建表单
+      const handleConfigSave = (message: any) => {
+        if (message.success) {
+          setIsCreating(false);
+          setCreatingType(null);
+        }
+        // 取消订阅，避免重复处理
+        wsClient.unsubscribe('config_save');
+      };
+      
+      // 订阅配置保存响应
+      wsClient.subscribe('config_save', handleConfigSave);
+    }
   };
 
   const handleCreateCancel = () => {
     setIsCreating(false);
+  };
+
+  useEffect(() => {
+    // 订阅配置元数据
+    wsClient.subscribe<ConfigMeta>('ConfigMeta', handleConfigMeta);
+
+    // 订阅配置更新消息
+    wsClient.subscribe('config_update', (message: any) => {
+      console.log('ConfigTree收到config_update消息:', message);
+      if (message.type && message.data) {
+        handleConfigUpdate(message.type, message.data);
+      }
+    });
+
+    // 订阅错误消息
+    wsClient.subscribe('error', (message: any) => {
+      if (message.message) {
+        setError(message.message);
+      }
+    });
+
+    return () => {
+      wsClient.unsubscribe('ConfigMeta');
+      wsClient.unsubscribe('config_update');
+      wsClient.unsubscribe('error');
+    };
+  }, []);
+
+  const handleConfigUpdate = (type: string, data: any) => {
+    // Implementation of handleConfigUpdate
+  };
+
+  const handleConfigMeta = (meta: any) => {
+    if (meta.success === false) {
+      setError(meta.message);
+    }
   };
 
   if (isEditing) {

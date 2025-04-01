@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LogConfig } from '../../types/config';
 import ConfigEditForm from './ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface LogConfigDetailProps {
   config: LogConfig;
@@ -10,6 +11,7 @@ interface LogConfigDetailProps {
 
 const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -22,6 +24,16 @@ const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDel
   const handleSave = (updatedConfig: LogConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+  };
+
+  const handleCreateSave = (newConfig: LogConfig) => {
+    // 发送创建请求
+    wsClient.send({
+      action: 'config_save',
+      config_type: 'Log',
+      config_data: newConfig
+    });
+    setIsCreating(false);
   };
 
   if (isEditing) {

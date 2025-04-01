@@ -280,10 +280,19 @@ export class WSClient {
         return;
       }
 
-      // 处理配置更新消息
       if (message.action === 'config_update') {
         console.log('检测到config_update消息:', message);
         const handlers = this.listeners.get('config_update');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
+        }
+        return;
+      }
+
+      // 处理配置更新消息
+      if (message.action === 'config_save') {
+        console.log('检测到config_save消息:', message);
+        const handlers = this.listeners.get('config_save');
         if (handlers) {
           handlers.forEach(handler => handler(message));
         }

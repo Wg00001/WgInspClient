@@ -35,7 +35,16 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
   const handleConfigMeta = (meta: any) => {
     try {
       console.log('接收到配置元数据:', meta);
-      if (meta && meta.success && meta.config_data) {
+      if (meta.action === 'config_save') {
+        if (meta.success) {
+          console.log('配置保存成功，更新状态');
+          setConfigData(meta.config_data);
+          setError(null);
+        } else {
+          console.error('配置保存失败:', meta.message);
+          setError(meta.message || '配置保存失败');
+        }
+      } else if (meta && meta.success && meta.config_data) {
         console.log('配置数据有效，更新状态');
         setConfigData(meta.config_data);
         setError(null);
@@ -75,6 +84,7 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
         </div>
       </div>
       <div className="config-detail-content">
+        {error && <div className="error-message">{error}</div>}
         <div className="config-detail-item">
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
