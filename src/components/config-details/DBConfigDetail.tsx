@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DBConfig } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface DBConfigDetailProps {
   config: DBConfig;
@@ -21,7 +22,17 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
 
   const handleSave = (updatedConfig: DBConfig) => {
     onEdit(updatedConfig);
+    wsClient.sendUpdate('DB', updatedConfig);
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    onDelete?.();
+    wsClient.sendDelete('DB', config.Identity);
+  };
+
+  const handleCreate = (newConfig: DBConfig) => {
+    wsClient.sendCreate('DB', newConfig);
   };
 
   if (isEditing) {
@@ -31,7 +42,7 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
           config={config}
           onCancel={handleCancel}
           onSave={handleSave}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           type="DB"
         />
       </div>
@@ -43,6 +54,7 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
         <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

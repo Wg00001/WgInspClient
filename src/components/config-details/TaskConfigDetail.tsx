@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TaskConfig, ConfigMeta } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
 import { wsClient } from '../../services/wsClient';
 
 interface TaskConfigDetailProps {
@@ -27,52 +27,20 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
   const handleSave = (updatedConfig: TaskConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
-  };
-
-  const handleCreate = () => {
-    setIsCreating(true);
-  };
-
-  const handleCreateSave = (newConfig: any) => {
-    if (creatingType) {
-      console.log('创建新配置:', { type: creatingType, config: newConfig });
-      // 发送创建请求
-      wsClient.send({
-        action: 'config_save',  // 使用 config_save 而不是 config_update
-        config_type: creatingType,
-        config_data: newConfig  // 确保传入新的配置数据
-      });
-      
-      // 等待服务端响应后再关闭创建表单
-      const handleConfigSave = (message: any) => {
-        if (message.success) {
-          setIsCreating(false);
-          setCreatingType(null);
-        }
-        // 取消订阅，避免重复处理
-        wsClient.unsubscribe('config_save');
-      };
-      
-      // 订阅配置保存响应
-      wsClient.subscribe('config_save', handleConfigSave);
-    }
+    wsClient.sendUpdate('Task', updatedConfig);
   };
 
   const handleCreateCancel = () => {
     setIsCreating(false);
   };
 
+  const handleCreate = (newConfig: TaskConfig) => {
+    wsClient.sendCreate('Task', newConfig);
+  };
+
   useEffect(() => {
     // 订阅配置元数据
     wsClient.subscribe<ConfigMeta>('ConfigMeta', handleConfigMeta);
-
-    // 订阅配置更新消息
-    wsClient.subscribe('config_update', (message: any) => {
-      console.log('ConfigTree收到config_update消息:', message);
-      if (message.type && message.data) {
-        handleConfigUpdate(message.type, message.data);
-      }
-    });
 
     // 订阅错误消息
     wsClient.subscribe('error', (message: any) => {
@@ -83,14 +51,9 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
 
     return () => {
       wsClient.unsubscribe('ConfigMeta');
-      wsClient.unsubscribe('config_update');
       wsClient.unsubscribe('error');
     };
   }, []);
-
-  const handleConfigUpdate = (type: string, data: any) => {
-    // Implementation of handleConfigUpdate
-  };
 
   const handleConfigMeta = (meta: any) => {
     if (meta.success === false) {
@@ -133,7 +96,7 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
             NotTodo: null
           }}
           onCancel={handleCreateCancel}
-          onSave={handleCreateSave}
+          onSave={handleSave}
           type="Task"
         />
       </div>
@@ -146,6 +109,7 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
         <h3>{config.Identity}</h3>
         <div className="header-buttons">
           <button onClick={handleEdit} className="btn-edit">修改配置</button>
+          <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
         </div>
       </div>
       <div className="config-detail-content">

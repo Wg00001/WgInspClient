@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertConfig } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface AlertConfigDetailProps {
   config: AlertConfig;
@@ -21,7 +22,19 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
 
   const handleSave = (updatedConfig: AlertConfig) => {
     onEdit(updatedConfig);
+    wsClient.sendUpdate('Alert', updatedConfig);
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+    }
+    wsClient.sendDelete('Alert', config.Identity);
+  };
+
+  const handleCreate = (newConfig: AlertConfig) => {
+    wsClient.sendCreate('Alert', newConfig);
   };
 
   if (isEditing) {
@@ -31,7 +44,7 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
           config={config}
           onCancel={handleCancel}
           onSave={handleSave}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           type="Alert"
         />
       </div>
@@ -43,6 +56,7 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
         <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

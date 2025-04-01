@@ -1,3 +1,4 @@
+import { ResponseMsg } from '../types/config';
 // 新增类型声明
 type ServerMessage = {
   type: string;
@@ -26,6 +27,7 @@ const CONFIG_TYPES = [
   'KBase',
   'Inspector'
 ];
+
 
 export class WSClient {
   private ws: WebSocket | null = null;
@@ -250,7 +252,7 @@ export class WSClient {
 
   private handleMessage = (event: MessageEvent) => {
     try {
-      const message = JSON.parse(event.data);
+      const message: ResponseMsg = JSON.parse(event.data);
       console.log('收到WebSocket消息:', message);
       console.log('当前所有订阅:', Array.from(this.listeners.keys()));
 
@@ -263,7 +265,7 @@ export class WSClient {
           this.hasInitialized = true;
           this.reconnectAttempts = 0;
         } else {
-          console.error('认证失败:', message.error);
+          console.error('认证失败:', message.message);
           this.isAuthenticated = false;
           this.disconnect();
         }
@@ -300,17 +302,41 @@ export class WSClient {
       }
 
       // 处理其他消息类型
-      if (message.type) {
-        console.log('检测到类型消息:', message.type);
-        const handlers = this.listeners.get(message.type);
+      if (message.config_type) {
+        console.log('检测到类型消息:', message.config_type);
+        const handlers = this.listeners.get(message.config_type);
         if (handlers) {
-          handlers.forEach(handler => handler(message.data));
+          handlers.forEach(handler => handler(message.config_type));
         }
       }
     } catch (error) {
       console.error('处理WebSocket消息时出错:', error);
     }
   };
+
+  public sendUpdate(configType: string, configData: any) {
+    this.send({
+      action: 'config_update',
+      config_type: configType,
+      config_data: configData
+    });
+  }
+
+  public sendCreate(configType: string, configData: any) {
+    this.send({
+      action: 'config_create',
+      config_type: configType,
+      config_data: configData
+    });
+  }
+
+  public sendDelete(configType: string, configData: any) {
+    this.send({
+      action: 'config_delete',
+      config_type: configType,
+      config_data: configData
+    });
+  }
 }
 
 export const wsClient = new WSClient(); 

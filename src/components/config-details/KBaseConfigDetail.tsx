@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { KnowledgeBaseConfig } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface KBaseConfigDetailProps {
   config: KnowledgeBaseConfig;
@@ -22,6 +23,16 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
   const handleSave = (updatedConfig: KnowledgeBaseConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+    wsClient.sendUpdate('KBase', updatedConfig);
+  };
+
+  const handleDelete = () => {
+    onDelete?.();
+    wsClient.sendDelete('KBase', config.Identity);
+  };
+
+  const handleCreate = (newConfig: KnowledgeBaseConfig) => {
+    wsClient.sendCreate('KBase', newConfig);
   };
 
   if (isEditing) {
@@ -31,7 +42,7 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
           config={config}
           onCancel={handleCancel}
           onSave={handleSave}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           type="KBase"
         />
       </div>
@@ -43,6 +54,7 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
       <div className="config-detail-header">
         <h3>{config.Identity || '知识库配置'}</h3>
         <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

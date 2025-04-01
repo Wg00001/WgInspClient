@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { InspectorConfig } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface InspectorConfigDetailProps {
   config: InspectorConfig;
@@ -23,6 +24,16 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
   const handleSave = (updatedConfig: InspectorConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+    wsClient.sendUpdate('Inspector', updatedConfig);
+  };
+
+  const handleDelete = () => {
+    onDelete?.();
+    wsClient.sendDelete('Inspector', config.ID);
+  };
+
+  const handleCreate = (newConfig: InspectorConfig) => {
+    wsClient.sendCreate('Inspector', newConfig);
   };
 
   const toggleChild = (childId: string) => {
@@ -39,7 +50,7 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
           config={config}
           onCancel={handleCancel}
           onSave={handleSave}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           type="Inspector"
         />
       </div>
@@ -51,6 +62,7 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
       <div className="config-detail-header">
         <h3>{config.Name}</h3>
         <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

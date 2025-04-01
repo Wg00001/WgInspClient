@@ -131,3 +131,11 @@ export interface ClientMessage {
   new_password?: string;
   auth_token?: string;
 } 
+
+export interface ResponseMsg {
+  action: string;
+  config_type: string;
+  success: boolean;
+  message: string;
+  config_data: any;
+}

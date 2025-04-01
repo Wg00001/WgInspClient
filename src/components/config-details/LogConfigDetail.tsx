@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LogConfig } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
 import { wsClient } from '../../services/wsClient';
 
 interface LogConfigDetailProps {
@@ -24,16 +24,18 @@ const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDel
   const handleSave = (updatedConfig: LogConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+    wsClient.sendUpdate('Log', updatedConfig);
   };
 
-  const handleCreateSave = (newConfig: LogConfig) => {
-    // 发送创建请求
-    wsClient.send({
-      action: 'config_save',
-      config_type: 'Log',
-      config_data: newConfig
-    });
-    setIsCreating(false);
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+    }
+    wsClient.sendDelete('Log', config.Identity);
+  };
+
+  const handleCreate = (newConfig: LogConfig) => {
+    wsClient.sendCreate('Log', newConfig);
   };
 
   if (isEditing) {
@@ -43,7 +45,7 @@ const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDel
           config={config}
           onCancel={handleCancel}
           onSave={handleSave}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           type="Log"
         />
       </div>
@@ -55,6 +57,7 @@ const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDel
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
         <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">

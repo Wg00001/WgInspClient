@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AgentConfig } from '../../types/config';
-import ConfigEditForm from './ConfigEditForm';
+import ConfigEditForm from '../ConfigEditForm';
+import { wsClient } from '../../services/wsClient';
 
 interface AgentConfigDetailProps {
   config: AgentConfig;
@@ -30,35 +31,18 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
   const handleSave = (updatedConfig: AgentConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
+    wsClient.sendUpdate('Agent', updatedConfig);
   };
 
-  const handleConfigMeta = (meta: any) => {
-    try {
-      console.log('接收到配置元数据:', meta);
-      if (meta.action === 'config_save') {
-        if (meta.success) {
-          console.log('配置保存成功，更新状态');
-          setConfigData(meta.config_data);
-          setError(null);
-        } else {
-          console.error('配置保存失败:', meta.message);
-          setError(meta.message || '配置保存失败');
-        }
-      } else if (meta && meta.success && meta.config_data) {
-        console.log('配置数据有效，更新状态');
-        setConfigData(meta.config_data);
-        setError(null);
-      } else {
-        console.error('无效的配置元数据格式:', meta);
-        setError(meta.message || '配置数据格式无效');
-      }
-    } catch (err) {
-      console.error('处理配置元数据时出错:', err);
-      handleError(err);
-    } finally {
-      console.log('设置加载状态为 false');
-      setIsLoading(false);
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
     }
+    wsClient.sendDelete('Agent', config.Driver);
+  };
+
+  const handleCreate = (newConfig: AgentConfig) => {
+    wsClient.sendCreate('Agent', newConfig);
   };
 
   if (isEditing) {
@@ -68,7 +52,7 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
           config={config}
           onCancel={handleCancel}
           onSave={handleSave}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           type="Agent"
         />
       </div>
@@ -81,6 +65,7 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
         <h3>Agent 配置</h3>
         <div className="header-buttons">
           <button onClick={handleEdit} className="btn-edit">修改配置</button>
+          <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
         </div>
       </div>
       <div className="config-detail-content">

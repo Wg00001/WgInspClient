@@ -9,7 +9,7 @@ import AgentConfigDetail from './config-details/AgentConfigDetail';
 import AgentTaskConfigDetail from './config-details/AgentTaskConfigDetail';
 import KBaseConfigDetail from './config-details/KBaseConfigDetail';
 import InspectorConfigDetail from './config-details/InspectorConfigDetail';
-import ConfigEditForm from './config-details/ConfigEditForm';
+import ConfigEditForm from './ConfigEditForm';
 
 interface MenuItem {
   id: string;
@@ -135,16 +135,16 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       handleConfigUpdate({ config_type: message.type, config_data: message.data });
     });
 
-    // 订阅配置保存响应
-    wsClient.subscribe('config_save', (message: { config_type: string; config_data: any }) => {
-      console.log('ConfigTree收到config_save响应:', message);
-      if (message.config_data) {
-        handleConfigUpdate({ 
-          config_type: message.config_type, 
-          config_data: Array.isArray(message.config_data) ? message.config_data : [message.config_data] 
-        });
-      }
-    });
+    // // 订阅配置保存响应
+    // wsClient.subscribe('config_save', (message: { config_type: string; config_data: any }) => {
+    //   console.log('ConfigTree收到config_save响应:', message);
+    //   if (message.config_data) {
+    //     handleConfigUpdate({ 
+    //       config_type: message.config_type, 
+    //       config_data: Array.isArray(message.config_data) ? message.config_data : [message.config_data] 
+    //     });
+    //   }
+    // });
 
     // 发送初始化请求
     initializeData();
