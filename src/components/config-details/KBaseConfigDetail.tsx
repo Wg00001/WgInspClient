@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { KnowledgeBaseConfig } from '../../types/config';
 import ConfigEditForm from '../ConfigEditForm';
-import { wsClient } from '../../services/wsClient';
 
 interface KBaseConfigDetailProps {
   config: KnowledgeBaseConfig;
@@ -11,6 +10,7 @@ interface KBaseConfigDetailProps {
 
 const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -23,16 +23,16 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
   const handleSave = (updatedConfig: KnowledgeBaseConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
-    wsClient.sendUpdate('KBase', updatedConfig);
   };
 
   const handleDelete = () => {
-    onDelete?.();
-    wsClient.sendDelete('KBase', config.Identity);
+    if (onDelete) {
+      onDelete();
+    }
   };
 
-  const handleCreate = (newConfig: KnowledgeBaseConfig) => {
-    wsClient.sendCreate('KBase', newConfig);
+  const toggleDetails = () => {
+    setShowDetails(!showDetails);
   };
 
   if (isEditing) {
@@ -52,35 +52,44 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
-        <h3>{config.Identity || '知识库配置'}</h3>
-        <button onClick={handleEdit} className="btn-edit">修改配置</button>
-        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
+        <h3>{config.Identity}</h3>
+        <div className="header-buttons">
+          <button onClick={toggleDetails} className="btn-details">
+            {showDetails ? '收起详情' : '详细信息'}
+          </button>
+          <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        </div>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
         </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">集合名称</span>
-          <span className="config-detail-value">{config.Value.collection}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">路径</span>
-          <span className="config-detail-value">{config.Value.path}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">嵌入驱动</span>
-          <span className="config-detail-value">{config.Value.embedding.driver}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">基础URL</span>
-          <span className="config-detail-value">{config.Value.embedding.baseurl}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">模型</span>
-          <span className="config-detail-value">{config.Value.embedding.model}</span>
-        </div>
+
+        {showDetails && (
+          <>
+            <div className="config-detail-item">
+              <span className="config-detail-label">集合</span>
+              <span className="config-detail-value">{config.Value.collection}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">路径</span>
+              <span className="config-detail-value">{config.Value.path}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">嵌入驱动</span>
+              <span className="config-detail-value">{config.Value.embedding.driver}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">基础URL</span>
+              <span className="config-detail-value">{config.Value.embedding.baseurl}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">模型</span>
+              <span className="config-detail-value">{config.Value.embedding.model}</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

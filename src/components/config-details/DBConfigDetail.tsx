@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { DBConfig } from '../../types/config';
 import ConfigEditForm from '../ConfigEditForm';
-import { wsClient } from '../../services/wsClient';
 
 interface DBConfigDetailProps {
   config: DBConfig;
@@ -11,6 +10,7 @@ interface DBConfigDetailProps {
 
 const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -22,17 +22,17 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
 
   const handleSave = (updatedConfig: DBConfig) => {
     onEdit(updatedConfig);
-    wsClient.sendUpdate('DB', updatedConfig);
     setIsEditing(false);
   };
 
   const handleDelete = () => {
-    onDelete?.();
-    wsClient.sendDelete('DB', config.Identity);
+    if (onDelete) {
+      onDelete();
+    }
   };
 
-  const handleCreate = (newConfig: DBConfig) => {
-    wsClient.sendCreate('DB', newConfig);
+  const toggleDetails = () => {
+    setShowDetails(!showDetails);
   };
 
   if (isEditing) {
@@ -53,8 +53,12 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
     <div className="config-detail-card">
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
-        <button onClick={handleEdit} className="btn-edit">修改配置</button>
-        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
+        <div className="header-buttons">
+          <button onClick={toggleDetails} className="btn-details">
+            {showDetails ? '收起详情' : '详细信息'}
+          </button>
+          <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        </div>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">
@@ -62,7 +66,7 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
           <span className="config-detail-value">{config.Driver}</span>
         </div>
         <div className="config-detail-item">
-          <span className="config-detail-label">连接串</span>
+          <span className="config-detail-label">DSN</span>
           <span className="config-detail-value">{config.DSN}</span>
         </div>
       </div>

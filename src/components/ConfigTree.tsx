@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { wsClient } from '../services/wsClient';
-import { ConfigMeta, ConfigType } from '../types/config';
+import { ConfigMeta, ConfigType, InspectorConfig } from '../types/config';
 import DBConfigDetail from './config-details/DBConfigDetail';
 import LogConfigDetail from './config-details/LogConfigDetail';
 import AlertConfigDetail from './config-details/AlertConfigDetail';
@@ -10,6 +10,7 @@ import AgentTaskConfigDetail from './config-details/AgentTaskConfigDetail';
 import KBaseConfigDetail from './config-details/KBaseConfigDetail';
 import InspectorConfigDetail from './config-details/InspectorConfigDetail';
 import ConfigEditForm from './ConfigEditForm';
+import '../styles/ConfigTree.css';
 
 interface MenuItem {
   id: string;
@@ -40,6 +41,17 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [creatingType, setCreatingType] = useState<ConfigType | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // 处理错误消息的函数
+  const handleErrorMessage = (message: string) => {
+    setErrorMessage(message);
+  };
+
+  // 关闭错误弹窗
+  const closeErrorModal = () => {
+    setErrorMessage(null);
+  };
 
   // 初始化请求函数
   const initializeData = () => {
@@ -68,6 +80,9 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           setError(null);
         } else {
           console.error('无效的配置元数据格式:', meta);
+          if (!meta.success && meta.message) {
+            handleErrorMessage(meta.message);
+          }
           setError(meta.message || '配置数据格式无效');
         }
       } catch (err) {
@@ -79,10 +94,31 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       }
     };
 
-    const handleConfigUpdate = (message: { config_type: string; config_data: any[] }) => {
+    const handleConfigUpdate = (message: { config_type: string; config_data: any[]}) => {
       console.log('ConfigTree接收到配置更新:', message);
-      if (!configData) {
+
+      if (!message.config_data) {
         console.log('configData为空，跳过更新');
+        return;
+      }
+
+      // 确保 configData 已初始化
+      if (!configData) {
+        console.log('初始化配置数据');
+        setConfigData({
+          DBs: [],
+          Logs: [],
+          Alerts: [],
+          Tasks: [],
+          Agent: null,
+          AgentTasks: [],
+          KnowledgeBases: [],
+          Insp: {
+            Roots: {},
+            Num: 0,
+            AllInsp: []
+          }
+        });
         return;
       }
 
@@ -126,25 +162,37 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       setConfigData(newConfigData);
     };
 
+    //subcribe为客户端收到消息后进行的操作
+
     // 订阅配置元数据
     wsClient.subscribe<ConfigMeta>('ConfigMeta', handleConfigMeta);
 
     // 订阅配置更新消息
     wsClient.subscribe('config_update', (message: any) => {
       console.log('ConfigTree收到config_update消息:', message);
-      handleConfigUpdate({ config_type: message.type, config_data: message.data });
+      if (message.success === false) {
+        handleErrorMessage(message.message || '配置更新失败');
+        return;
+      }
+      // 直接使用消息中的字段
+      handleConfigUpdate({
+        config_type: message.config_type,
+        config_data: message.config_data
+      });
     });
 
-    // // 订阅配置保存响应
-    // wsClient.subscribe('config_save', (message: { config_type: string; config_data: any }) => {
-    //   console.log('ConfigTree收到config_save响应:', message);
-    //   if (message.config_data) {
-    //     handleConfigUpdate({ 
-    //       config_type: message.config_type, 
-    //       config_data: Array.isArray(message.config_data) ? message.config_data : [message.config_data] 
-    //     });
-    //   }
-    // });
+    // 订阅配置创建消息
+    wsClient.subscribe('config_create', (message: any) => {
+      console.log('ConfigTree收到config_create消息:', message);
+      if (message.success === false) {
+        handleErrorMessage(message.message || '配置创建失败');
+        return;
+      }
+      handleConfigUpdate({
+        config_type: message.config_type,
+        config_data: message.config_data
+      });
+    });
 
     // 发送初始化请求
     initializeData();
@@ -152,17 +200,13 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     return () => {
       wsClient.unsubscribe('ConfigMeta');
       wsClient.unsubscribe('config_update');
-      wsClient.unsubscribe('config_save');
+      wsClient.unsubscribe('config_create');
     };
   }, []);
 
   const handleConfigEdit = (type: ConfigType, updatedConfig: any) => {
     console.log('Saving config update:', { type, config: updatedConfig });
-    wsClient.send({
-      action: 'config_save',
-      config_type: type,
-      config_data: updatedConfig
-    });
+    wsClient.sendUpdate(type,updatedConfig)
   };
 
   const handleConfigDelete = (type: ConfigType, identity: string) => {
@@ -174,33 +218,23 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     });
   };
 
+
   const handleCreate = (type: ConfigType) => {
     setIsCreating(true);
     setCreatingType(type);
   };
 
-  const handleCreateSave = (newConfig: any) => {
+  const handleConfigCreate = (newConfig: ConfigType) => {
     if (creatingType) {
       console.log('创建新配置:', { type: creatingType, config: newConfig });
       // 先发送创建请求
       wsClient.send({
-        action: 'config_save',
+        action: 'config_create',
         config_type: creatingType,
         config_data: newConfig
       });
-      
-      // 等待服务端响应后再关闭创建表单
-      const handleConfigSave = (message: any) => {
-        if (message.config_type === creatingType) {
-          setIsCreating(false);
-          setCreatingType(null);
-          // 取消订阅，避免重复处理
-          wsClient.unsubscribe('config_save');
-        }
-      };
-      
-      // 订阅配置保存响应
-      wsClient.subscribe('config_save', handleConfigSave);
+      setIsCreating(false);
+      // setCreatingType(creatingType);
     }
   };
 
@@ -210,7 +244,9 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   };
 
   const renderConfigContent = () => {
-    if (!configData) return null;
+    if (!configData) {
+      return <div>加载中...</div>;
+    }
 
     if (isCreating && creatingType) {
       return (
@@ -218,7 +254,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <ConfigEditForm
             config={getEmptyConfig(creatingType)}
             onCancel={handleCreateCancel}
-            onSave={handleCreateSave}
+            onSave={handleConfigCreate}
             type={creatingType}
           />
         </div>
@@ -235,7 +271,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.DBs.map((db, index) => (
+            {configData.DBs?.map((db, index) => (
               <DBConfigDetail
                 key={index}
                 config={db}
@@ -254,7 +290,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Logs.map((log, index) => (
+            {configData.Logs?.map((log, index) => (
               <LogConfigDetail
                 key={index}
                 config={log}
@@ -273,7 +309,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Alerts.map((alert, index) => (
+            {configData.Alerts?.map((alert, index) => (
               <AlertConfigDetail
                 key={index}
                 config={alert}
@@ -292,7 +328,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Tasks.map((task, index) => (
+            {configData.Tasks?.map((task, index) => (
               <TaskConfigDetail
                 key={index}
                 config={task}
@@ -306,11 +342,13 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return (
           <div className="config-detail">
             <h2>Agent配置</h2>
-            <AgentConfigDetail
-              config={configData.Agent}
-              onEdit={(config) => handleConfigEdit('Agent', config)}
-              onDelete={() => handleConfigDelete('Agent', configData.Agent.Driver)}
-            />
+            {configData.Agent && (
+              <AgentConfigDetail
+                config={configData.Agent}
+                onEdit={(config) => handleConfigEdit('Agent', config)}
+                onDelete={() => handleConfigDelete('Agent', configData.Agent.Driver)}
+              />
+            )}
           </div>
         );
       case 'agent-tasks':
@@ -322,7 +360,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.AgentTasks.map((task, index) => (
+            {configData.AgentTasks?.map((task, index) => (
               <AgentTaskConfigDetail
                 key={index}
                 config={task}
@@ -341,7 +379,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.KnowledgeBases.map((kb, index) => (
+            {configData.KnowledgeBases?.map((kb, index) => (
               <KBaseConfigDetail
                 key={index}
                 config={kb}
@@ -360,7 +398,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Insp.AllInsp.map((insp, index) => (
+            {configData.Insp?.AllInsp?.map((insp, index) => (
               <InspectorConfigDetail
                 key={index}
                 config={insp}
@@ -478,6 +516,21 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
   return (
     <div className="config-container">
+      {errorMessage && (
+        <div className="error-modal">
+          <div className="error-modal-content">
+            <h3 className="error-title">操作失败</h3>
+            <p className="error-message">{errorMessage}</p>
+            <button 
+              onClick={closeErrorModal} 
+              className="error-close-button"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="config-sidebar">
         <div className="sidebar-header">
           <h2>配置管理</h2>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { InspectorConfig } from '../../types/config';
 import ConfigEditForm from '../ConfigEditForm';
-import { wsClient } from '../../services/wsClient';
 
 interface InspectorConfigDetailProps {
   config: InspectorConfig;
@@ -11,7 +10,7 @@ interface InspectorConfigDetailProps {
 
 const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [expandedChildren, setExpandedChildren] = useState<Record<string, boolean>>({});
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -24,23 +23,16 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
   const handleSave = (updatedConfig: InspectorConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
-    wsClient.sendUpdate('Inspector', updatedConfig);
   };
 
   const handleDelete = () => {
-    onDelete?.();
-    wsClient.sendDelete('Inspector', config.ID);
+    if (onDelete) {
+      onDelete();
+    }
   };
 
-  const handleCreate = (newConfig: InspectorConfig) => {
-    wsClient.sendCreate('Inspector', newConfig);
-  };
-
-  const toggleChild = (childId: string) => {
-    setExpandedChildren(prev => ({
-      ...prev,
-      [childId]: !prev[childId]
-    }));
+  const toggleDetails = () => {
+    setShowDetails(!showDetails);
   };
 
   if (isEditing) {
@@ -61,50 +53,46 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
     <div className="config-detail-card">
       <div className="config-detail-header">
         <h3>{config.Name}</h3>
-        <button onClick={handleEdit} className="btn-edit">修改配置</button>
-        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
+        <div className="header-buttons">
+          <button onClick={toggleDetails} className="btn-details">
+            {showDetails ? '收起详情' : '详细信息'}
+          </button>
+          <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        </div>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">
-          <span className="config-detail-label">SQL语句</span>
+          <span className="config-detail-label">ID</span>
+          <span className="config-detail-value">{config.ID}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">SQL</span>
           <span className="config-detail-value">{config.SQL}</span>
         </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">告警ID</span>
-          <span className="config-detail-value">{config.AlertID || '无'}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">告警条件</span>
-          <span className="config-detail-value">{config.AlertWhen || '无'}</span>
-        </div>
 
-        {config.Children && config.Children.length > 0 && (
-          <div className="inspector-children">
-            <div className="children-header">
-              <h4>子配置项</h4>
+        {showDetails && (
+          <>
+            <div className="config-detail-item">
+              <span className="config-detail-label">告警ID</span>
+              <span className="config-detail-value">{config.AlertID || '无'}</span>
             </div>
-            {config.Children.map(child => (
-              <div key={child.ID} className="inspector-child">
-                <div 
-                  className="child-header"
-                  onClick={() => toggleChild(child.ID)}
-                >
-                  <span className="child-name">{child.Name}</span>
-                  <span className="child-toggle">
-                    {expandedChildren[child.ID] ? '收起' : '展开'}
-                  </span>
+            <div className="config-detail-item">
+              <span className="config-detail-label">告警条件</span>
+              <span className="config-detail-value">{config.AlertWhen || '无'}</span>
+            </div>
+            {config.Children && config.Children.length > 0 && (
+              <div className="config-detail-item">
+                <span className="config-detail-label">子巡检</span>
+                <div className="children-list">
+                  {config.Children.map((child, index) => (
+                    <div key={index} className="child-item">
+                      <span>{child.Name}</span>
+                    </div>
+                  ))}
                 </div>
-                {expandedChildren[child.ID] && (
-                  <div className="child-details">
-                    <InspectorConfigDetail
-                      config={child}
-                      onEdit={onEdit}
-                    />
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

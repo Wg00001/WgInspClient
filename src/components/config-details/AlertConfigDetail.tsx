@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AlertConfig } from '../../types/config';
 import ConfigEditForm from '../ConfigEditForm';
-import { wsClient } from '../../services/wsClient';
 
 interface AlertConfigDetailProps {
   config: AlertConfig;
@@ -11,6 +10,7 @@ interface AlertConfigDetailProps {
 
 const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -22,7 +22,6 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
 
   const handleSave = (updatedConfig: AlertConfig) => {
     onEdit(updatedConfig);
-    wsClient.sendUpdate('Alert', updatedConfig);
     setIsEditing(false);
   };
 
@@ -30,11 +29,10 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
     if (onDelete) {
       onDelete();
     }
-    wsClient.sendDelete('Alert', config.Identity);
   };
 
-  const handleCreate = (newConfig: AlertConfig) => {
-    wsClient.sendCreate('Alert', newConfig);
+  const toggleDetails = () => {
+    setShowDetails(!showDetails);
   };
 
   if (isEditing) {
@@ -55,20 +53,29 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
     <div className="config-detail-card">
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
-        <button onClick={handleEdit} className="btn-edit">修改配置</button>
-        <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
+        <div className="header-buttons">
+          <button onClick={toggleDetails} className="btn-details">
+            {showDetails ? '收起详情' : '详细信息'}
+          </button>
+          <button onClick={handleEdit} className="btn-edit">修改配置</button>
+        </div>
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
         </div>
-        {Object.entries(config.Header).map(([key, value]) => (
-          <div key={key} className="config-detail-item">
-            <span className="config-detail-label">{key}</span>
-            <span className="config-detail-value">{value}</span>
-          </div>
-        ))}
+
+        {showDetails && (
+          <>
+            {Object.entries(config.Header).map(([key, value]) => (
+              <div key={key} className="config-detail-item">
+                <span className="config-detail-label">{key}</span>
+                <span className="config-detail-value">{value}</span>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

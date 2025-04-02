@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AgentTaskConfig } from '../../types/config';
 import ConfigEditForm from '../ConfigEditForm';
-import { wsClient } from '../../services/wsClient';
 
 interface AgentTaskConfigDetailProps {
   config: AgentTaskConfig;
@@ -24,16 +23,12 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
   const handleSave = (updatedConfig: AgentTaskConfig) => {
     onEdit(updatedConfig);
     setIsEditing(false);
-    wsClient.sendUpdate('AgentTask', updatedConfig);
   };
 
   const handleDelete = () => {
-    onDelete?.();
-    wsClient.sendDelete('AgentTask', config.Identity);
-  };
-
-  const handleCreate = (newConfig: AgentTaskConfig) => {
-    wsClient.sendCreate('AgentTask', newConfig);
+    if (onDelete) {
+      onDelete();
+    }
   };
 
   const toggleDetails = () => {
@@ -48,7 +43,7 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="Agent"
+          type="AgentTask"
         />
       </div>
     );
@@ -63,7 +58,6 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
             {showDetails ? '收起详情' : '详细信息'}
           </button>
           <button onClick={handleEdit} className="btn-edit">修改配置</button>
-          <button onClick={() => handleCreate(config)} className="btn-create">创建配置</button>
         </div>
       </div>
       <div className="config-detail-content">
