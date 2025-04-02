@@ -282,7 +282,7 @@ export class WSClient {
         return;
       }
 
-      if (message.action === 'config_update' || message.action === 'config_create') {
+      if (message.action === 'config_update' || message.action === 'config_create' || message.action === 'config_delete') {
         console.log('检测到config_update消息:', message);
         const handlers = this.listeners.get('config_update');
         if (handlers) {
