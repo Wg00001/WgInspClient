@@ -65,31 +65,22 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
         </div>
-
-        {showDetails && (
-          <>
-            <div className="config-detail-item">
-              <span className="config-detail-label">集合</span>
-              <span className="config-detail-value">{config.Value.collection}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">路径</span>
-              <span className="config-detail-value">{config.Value.path}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">嵌入驱动</span>
-              <span className="config-detail-value">{config.Value.embedding.driver}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">基础URL</span>
-              <span className="config-detail-value">{config.Value.embedding.baseurl}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">模型</span>
-              <span className="config-detail-value">{config.Value.embedding.model}</span>
-            </div>
-          </>
-        )}
+        <div className="config-detail-item">
+          <span className="config-detail-label">集合</span>
+          <span className="config-detail-value">{config.Value.collection}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">路径</span>
+          <span className="config-detail-value">{config.Value.path}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">嵌入驱动</span>
+          <span className="config-detail-value">{config.Value.embedding.driver}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">模型</span>
+          <span className="config-detail-value">{config.Value.embedding.model}</span>
+        </div>
       </div>
     </div>
   );

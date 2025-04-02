@@ -69,47 +69,42 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
           <span className="config-detail-label">日志ID</span>
           <span className="config-detail-value">{config.LogID}</span>
         </div>
-
-        {showDetails && (
-          <>
-            <div className="config-detail-item">
-              <span className="config-detail-label">定时表达式</span>
-              <span className="config-detail-value">{config.Cron.CronTab}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">持续时间</span>
-              <span className="config-detail-value">{config.Cron.Duration}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">执行时间</span>
-              <span className="config-detail-value">{config.Cron.AtTime?.join(', ') || '无'}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">每周执行</span>
-              <span className="config-detail-value">{config.Cron.Weekly?.join(', ') || '无'}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">每月执行</span>
-              <span className="config-detail-value">{config.Cron.Monthly?.join(', ') || '无'}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">目标数据库</span>
-              <span className="config-detail-value">{config.TargetDB.join(', ')}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">待执行巡检</span>
-              <span className="config-detail-value">{config.Todo.join(', ')}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">不执行巡检</span>
-              <span className="config-detail-value">{config.NotTodo?.join(', ') || '无'}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">所有巡检</span>
-              <span className="config-detail-value">{config.AllInspector ? '是' : '否'}</span>
-            </div>
-          </>
-        )}
+        <div className="config-detail-item">
+          <span className="config-detail-label">定时表达式</span>
+          <span className="config-detail-value">{config.Cron.CronTab}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">持续时间</span>
+          <span className="config-detail-value">{config.Cron.Duration}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">执行时间</span>
+          <span className="config-detail-value">{config.Cron.AtTime?.join(', ') || '无'}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">每周执行</span>
+          <span className="config-detail-value">{config.Cron.Weekly?.join(', ') || '无'}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">每月执行</span>
+          <span className="config-detail-value">{config.Cron.Monthly?.join(', ') || '无'}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">目标数据库</span>
+          <span className="config-detail-value">{config.TargetDB.join(', ')}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">待执行巡检</span>
+          <span className="config-detail-value">{config.Todo.join(', ')}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">不执行巡检</span>
+          <span className="config-detail-value">{config.NotTodo?.join(', ') || '无'}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">所有巡检</span>
+          <span className="config-detail-value">{config.AllInspector ? '是' : '否'}</span>
+        </div>
       </div>
     </div>
   );

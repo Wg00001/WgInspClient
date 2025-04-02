@@ -52,7 +52,7 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
-        <h3>{config.Name}</h3>
+        <h3>Identity:  {config.Identity}</h3>
         <div className="header-buttons">
           <button onClick={toggleDetails} className="btn-details">
             {showDetails ? '收起详情' : '详细信息'}
@@ -62,24 +62,20 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">
-          <span className="config-detail-label">ID</span>
-          <span className="config-detail-value">{config.ID}</span>
-        </div>
-        <div className="config-detail-item">
           <span className="config-detail-label">SQL</span>
           <span className="config-detail-value">{config.SQL}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">告警ID</span>
+          <span className="config-detail-value">{config.AlertID || '无'}</span>
+        </div>
+        <div className="config-detail-item">
+          <span className="config-detail-label">告警条件</span>
+          <span className="config-detail-value">{config.AlertWhen || '无'}</span>
         </div>
 
         {showDetails && (
           <>
-            <div className="config-detail-item">
-              <span className="config-detail-label">告警ID</span>
-              <span className="config-detail-value">{config.AlertID || '无'}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">告警条件</span>
-              <span className="config-detail-value">{config.AlertWhen || '无'}</span>
-            </div>
             {config.Children && config.Children.length > 0 && (
               <div className="config-detail-item">
                 <span className="config-detail-label">子巡检</span>

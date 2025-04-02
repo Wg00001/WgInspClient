@@ -94,31 +94,15 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       }
     };
 
-    const handleConfigUpdate = (message: { config_type: string; config_data: any[]}) => {
+    const handleConfigUpdate = (message: any) => {
       console.log('ConfigTree接收到配置更新:', message);
 
       if (!message.config_data) {
         console.log('configData为空，跳过更新');
         return;
       }
-
-      // 确保 configData 已初始化
-      if (!configData) {
-        console.log('初始化配置数据');
-        setConfigData({
-          DBs: [],
-          Logs: [],
-          Alerts: [],
-          Tasks: [],
-          Agent: null,
-          AgentTasks: [],
-          KnowledgeBases: [],
-          Insp: {
-            Roots: {},
-            Num: 0,
-            AllInsp: []
-          }
-        });
+      if (!message.config_type) {
+        console.log('config_type为空，跳过更新');
         return;
       }
 
@@ -403,7 +387,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 key={index}
                 config={insp}
                 onEdit={(config) => handleConfigEdit('Common', config)}
-                onDelete={() => handleConfigDelete('Common', insp.ID)}
+                onDelete={() => handleConfigDelete('Common', insp.Identity)}
               />
             ))}
           </div>
@@ -425,13 +409,13 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Identity: '',
           Driver: '',
-          Header: {}
+          Option: {}
         };
       case 'Alert':
         return {
           Identity: '',
           Driver: '',
-          Header: {}
+          Option: {}
         };
       case 'Task':
         return {

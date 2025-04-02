@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../styles/ConfigEditForm.css';
 
 interface ConfigEditFormProps {
   config: any;
@@ -68,6 +69,64 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
             onChange={(e) => handleChange(field, e.target.value)}
             className="form-control"
           />
+        </div>
+      );
+    }
+
+    if (field === 'Option' && typeof value === 'object') {
+      return (
+        <div className="form-group" key={field}>
+          <label>{label}</label>
+          <div className="option-list">
+            {Object.entries(value).map(([key, val], index) => (
+              <div key={index} className="option-item">
+                <input
+                  type="text"
+                  value={key}
+                  onChange={(e) => {
+                    const newOption = { ...value };
+                    delete newOption[key];
+                    newOption[e.target.value] = val;
+                    handleChange(field, newOption);
+                  }}
+                  className="option-key"
+                  placeholder="键"
+                />
+                <input
+                  type="text"
+                  value={val as string}
+                  onChange={(e) => {
+                    const newOption = { ...value };
+                    newOption[key] = e.target.value;
+                    handleChange(field, newOption);
+                  }}
+                  className="option-value"
+                  placeholder="值"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newOption = { ...value };
+                    delete newOption[key];
+                    handleChange(field, newOption);
+                  }}
+                  className="btn-delete-option"
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                const newOption = { ...value, '': '' };
+                handleChange(field, newOption);
+              }}
+              className="btn-add-option"
+            >
+              添加键值对
+            </button>
+          </div>
         </div>
       );
     }

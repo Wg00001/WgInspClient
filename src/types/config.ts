@@ -49,11 +49,11 @@ export interface DBConfig extends BaseConfig {
 }
 
 export interface LogConfig extends BaseConfig {
-  Header: Record<string, string>;
+  Option: Record<string, string>;
 }
 
 export interface AlertConfig extends BaseConfig {
-  Header: Record<string, string>;
+  Option: Record<string, string>;
 }
 
 export interface Cron {
@@ -73,8 +73,7 @@ export interface TaskConfig extends BaseConfig {
   NotTodo: Identity[] | null;
 }
 
-export interface AgentConfig {
-  Driver: string;
+export interface AgentConfig extends BaseConfig{
   Url: string;
   ApiKey: string;
   Model: string;
@@ -107,7 +106,7 @@ export interface KnowledgeBaseConfig extends BaseConfig {
 }
 
 export interface InspectorConfig {
-  ID: string;
+  Identity: string;
   Name: string;
   SQL: string;
   AlertID?: string;

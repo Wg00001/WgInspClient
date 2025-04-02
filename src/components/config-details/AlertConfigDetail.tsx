@@ -65,10 +65,9 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
         </div>
-
         {showDetails && (
           <>
-            {Object.entries(config.Header).map(([key, value]) => (
+            {Object.entries(config.Option).map(([key, value]) => (
               <div key={key} className="config-detail-item">
                 <span className="config-detail-label">{key}</span>
                 <span className="config-detail-value">{value}</span>
