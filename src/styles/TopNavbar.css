@@ -1,0 +1,174 @@
+.top-navbar {
+  background-color: #001529;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 64px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-brand h1 {
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+  color: white;
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  margin-left: 20px;
+  max-width: calc(100% - 220px); /* 为品牌名称预留空间 */
+}
+
+.navbar-start {
+  display: flex;
+}
+
+.navbar-item {
+  padding: 0 16px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.navbar-item:hover {
+  color: white;
+}
+
+.navbar-item.active {
+  color: white;
+}
+
+.navbar-item.active::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 0;
+  height: 2px;
+  background: #1890ff;
+}
+
+.navbar-end {
+  display: flex;
+  align-items: center;
+}
+
+.logout-button {
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.logout-button:hover {
+  color: white;
+  border-color: white;
+}
+
+.navbar-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.toggle-bar {
+  width: 24px;
+  height: 2px;
+  background-color: white;
+  transition: all 0.3s;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .navbar-toggle {
+    display: flex;
+    margin-left: auto;
+  }
+
+  .navbar-brand h1 {
+    font-size: 16px; /* 减小标题字体大小 */
+    max-width: 200px; /* 限制标题宽度 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navbar-menu {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background-color: #001529;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    margin-left: 0;
+    max-width: 100%; /* 覆盖之前的max-width设置 */
+  }
+
+  .navbar-menu.active {
+    max-height: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .navbar-start {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .navbar-item {
+    width: 100%;
+    padding: 16px 20px;
+    height: auto;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .navbar-item.active::after {
+    display: none;
+  }
+
+  .navbar-item.active {
+    background-color: #1890ff;
+  }
+
+  .navbar-end {
+    width: 100%;
+    padding: 16px 20px;
+    justify-content: center;
+  }
+
+  .logout-button {
+    width: 100%;
+    padding: 8px;
+  }
+} 

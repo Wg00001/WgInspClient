@@ -1,4 +1,5 @@
 import { ResponseMsg } from '../types/config';
+import { Notice, NoticeConfirmStatus, NoticeRequest } from '../types/notice';
 // 新增类型声明
 type ServerMessage = {
   type: string;
@@ -272,6 +273,26 @@ export class WSClient {
         return;
       }
 
+      // 处理通知获取响应
+      if (message.action === 'notice_get') {
+        console.log('检测到notice_get消息');
+        const handlers = this.listeners.get('notice_get');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
+        }
+        return;
+      }
+
+      // 处理通知确认响应
+      if (message.action === 'notice_confirm') {
+        console.log('检测到notice_confirm消息');
+        const handlers = this.listeners.get('notice_confirm');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
+        }
+        return;
+      }
+
       // 处理配置元数据
       if (message.action === 'config_get' && message.config_type === 'Meta') {
         console.log('检测到配置元数据');
@@ -336,6 +357,25 @@ export class WSClient {
       config_type: configType,
       config_data: configData
     });
+  }
+
+  public getNotices(page: number = 1, pageSize: number = 20) {
+    const message: NoticeRequest = {
+      action: 'notice_get',
+      page,
+      page_size: pageSize
+    };
+    this.send(message);
+  }
+
+  public confirmNotice(notice: Notice, newStatus: NoticeConfirmStatus) {
+    notice.ConfirmStat = newStatus;
+    const message: NoticeRequest = {
+      action: 'notice_confirm',
+      config_data: notice,
+      confirm:  newStatus == 'Allow',
+    };
+    this.send(message);
   }
 }
 

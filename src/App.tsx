@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import ConfigTree from './components/ConfigTree';
+import MainContainer from './components/MainContainer';
 import { wsClient } from './services/wsClient';
 import './styles/login.css';
 
@@ -69,9 +69,7 @@ const App: React.FC = () => {
           path="/"
           element={
             isAuthenticated ? (
-              <div className="app-container">
-                <ConfigTree onLogout={handleLogout} />
-              </div>
+              <MainContainer onLogout={handleLogout} />
             ) : (
               <Navigate to="/login" replace />
             )

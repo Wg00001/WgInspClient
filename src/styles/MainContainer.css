@@ -1,0 +1,20 @@
+.main-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* 配置管理页面中不应该显示原来的侧边栏头部和退出按钮 */
+.main-container .config-sidebar .sidebar-header {
+  display: none;
+}
+
+.main-container .config-sidebar .sidebar-footer {
+  display: none;
+} 

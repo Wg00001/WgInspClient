@@ -530,11 +530,6 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             </div>
           ))}
         </div>
-        <div className="sidebar-footer">
-          <button onClick={onLogout} className="logout-button">
-            退出
-          </button>
-        </div>
       </div>
       <div className="config-content">
         {isLoading ? (
