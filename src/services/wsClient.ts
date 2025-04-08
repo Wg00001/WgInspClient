@@ -330,6 +330,15 @@ export class WSClient {
           handlers.forEach(handler => handler(message.config_type));
         }
       }
+
+      if (message.action === 'task_listen') {
+        console.log('检测到task_listen消息:', message);
+        const handlers = this.listeners.get('task_listen');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
+        }
+      }
+
     } catch (error) {
       console.error('处理WebSocket消息时出错:', error);
     }

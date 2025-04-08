@@ -4,11 +4,13 @@ import '../styles/Dashboard.css';
 const Dashboard: React.FC = () => {
   return (
     <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h2>系统仪表盘</h2>
-      </div>
-      <div className="empty-content">
-        敬请期待
+      <div className="dashboard-content">
+        <iframe 
+          src="http://localhost:3000/dashboards"
+          title="Grafana Dashboard"
+          className="dashboard-iframe"
+          allowFullScreen
+        />
       </div>
     </div>
   );

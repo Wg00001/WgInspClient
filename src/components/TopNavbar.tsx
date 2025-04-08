@@ -16,6 +16,7 @@ interface TopNavbarProps {
 const NAV_ITEMS: NavItem[] = [
   { key: 'config', title: '配置管理' },
   { key: 'notifications', title: '通知' },
+  { key: 'task-monitor', title: '任务监控' },
   { key: 'dashboard', title: '仪表盘' }
 ];
 

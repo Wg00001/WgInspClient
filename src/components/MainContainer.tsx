@@ -3,6 +3,7 @@ import TopNavbar from './TopNavbar';
 import ConfigTree from './ConfigTree';
 import Notifications from './Notifications';
 import Dashboard from './Dashboard';
+import TaskMonitor from './TaskMonitor';
 import { wsClient } from '../services/wsClient';
 import '../styles/MainContainer.css';
 
@@ -33,6 +34,8 @@ const MainContainer: React.FC<MainContainerProps> = ({ onLogout }) => {
         return <ConfigTree onLogout={onLogout} />;
       case 'notifications':
         return <Notifications />;
+      case 'task-monitor':
+        return <TaskMonitor />;
       case 'dashboard':
         return <Dashboard />;
       default:
