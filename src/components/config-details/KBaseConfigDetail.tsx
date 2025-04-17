@@ -49,6 +49,42 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
     );
   }
 
+  // 获取配置中所有字段
+  const renderConfigDetails = () => {
+    if (!config.Value) return null;
+    
+    return Object.entries(config.Value).map(([key, value]) => {
+      // 对于嵌套对象，如 embedding
+      if (typeof value === 'object' && value !== null) {
+        return (
+          <React.Fragment key={key}>
+            <div className="config-detail-item">
+              <span className="config-detail-label">{key}</span>
+              <span className="config-detail-value">
+                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+              </span>
+            </div>
+            {typeof value === 'object' && Object.entries(value as Record<string, any>).map(([nestedKey, nestedValue]) => (
+              <div key={`${key}-${nestedKey}`} className="config-detail-item nested-item">
+                <span className="config-detail-label">{key}.{nestedKey}</span>
+                <span className="config-detail-value">
+                  {typeof nestedValue === 'object' ? JSON.stringify(nestedValue) : String(nestedValue)}
+                </span>
+              </div>
+            ))}
+          </React.Fragment>
+        );
+      }
+      
+      return (
+        <div key={key} className="config-detail-item">
+          <span className="config-detail-label">{key}</span>
+          <span className="config-detail-value">{String(value)}</span>
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
@@ -65,22 +101,26 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
         </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">集合</span>
-          <span className="config-detail-value">{config.Value.collection}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">路径</span>
-          <span className="config-detail-value">{config.Value.path}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">嵌入驱动</span>
-          <span className="config-detail-value">{config.Value.embedding.driver}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">模型</span>
-          <span className="config-detail-value">{config.Value.embedding.model}</span>
-        </div>
+        {/* 基本字段始终显示 */}
+        {config.Value && (
+          <>
+            <div className="config-detail-item">
+              <span className="config-detail-label">集合</span>
+              <span className="config-detail-value">{config.Value.collection}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">路径</span>
+              <span className="config-detail-value">{config.Value.path}</span>
+            </div>
+          </>
+        )}
+        {/* 点击详细信息后显示所有字段 */}
+        {showDetails && (
+          <div className="config-details-section">
+            <h4>详细配置</h4>
+            {renderConfigDetails()}
+          </div>
+        )}
       </div>
     </div>
   );

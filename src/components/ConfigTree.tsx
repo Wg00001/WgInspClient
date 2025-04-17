@@ -23,11 +23,11 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'dbs', name: '数据库配置', type: 'DB' },
   { id: 'logs', name: '日志配置', type: 'Log' },
   { id: 'alerts', name: '告警配置', type: 'Alert' },
-  { id: 'tasks', name: '任务配置', type: 'Task' },
   { id: 'agent', name: 'Agent配置', type: 'Agent' },
-  { id: 'agent-tasks', name: 'Agent任务配置', type: 'Agent' },
   { id: 'knowledge-bases', name: '知识库配置', type: 'Common' },
-  { id: 'inspectors', name: '巡检配置', type: 'Common' }
+  { id: 'inspectors', name: '巡检配置', type: 'Common' },
+  { id: 'tasks', name: '任务配置', type: 'Task' },
+  { id: 'agent-tasks', name: 'Agent任务配置', type: 'Agent' }
 ];
 
 interface ConfigTreeProps {
@@ -42,6 +42,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [creatingType, setCreatingType] = useState<ConfigType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set());
 
   // 处理错误消息的函数
   const handleErrorMessage = (message: string) => {
@@ -177,6 +178,18 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         config_data: message.config_data
       });
     });
+
+    // 处理任务执行响应
+    const handleTaskDoResponse = (message: any) => {
+      if (message.action === 'task_do') {
+        setRunningTasks(prev => {
+          const newSet = new Set(prev);
+          // 使用config_data中的UUID来移除正在运行的任务
+          newSet.delete(message.config_data);
+          return newSet;
+        });
+      }
+    };
 
     // 发送初始化请求
     initializeData();

@@ -54,9 +54,9 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
       <div className="config-detail-header">
         <h3>{config.Identity}</h3>
         <div className="header-buttons">
-          <button onClick={toggleDetails} className="btn-details">
+          {/* <button onClick={toggleDetails} className="btn-details">
             {showDetails ? '收起详情' : '详细信息'}
-          </button>
+          </button> */}
           <button onClick={handleEdit} className="btn-edit">修改配置</button>
         </div>
       </div>

@@ -205,5 +205,74 @@
   color: #333;
   font-size: 20px;
   font-weight: 500;
-} 
+}
 
+.children-list {
+  margin-top: 10px;
+  border-left: 2px solid #f0f0f0;
+  padding-left: 20px;
+}
+
+.child-details {
+  background: #fafafa;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.child-details:last-child {
+  margin-bottom: 0;
+}
+
+.child-details .config-detail-item {
+  margin-bottom: 8px;
+}
+
+.child-details .config-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+/* 新增的详细配置样式 */
+.config-details-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.config-details-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.nested-item {
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 2px solid #f0f0f0;
+}
+
+.inspector-children {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #fafafa;
+  border-radius: 4px;
+}
+
+.inspector-child {
+  margin-bottom: 12px;
+  background-color: white;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.child-header {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.child-details {
+  padding: 12px;
+}

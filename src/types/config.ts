@@ -67,7 +67,7 @@ export interface Cron {
 export interface TaskConfig extends BaseConfig {
   Cron: Cron;
   AllInspector: boolean;
-  LogID: Identity;
+  TargetLogID: Identity;
   TargetDB: Identity[];
   Todo: Identity[];
   NotTodo: Identity[] | null;

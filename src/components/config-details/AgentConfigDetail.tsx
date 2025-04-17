@@ -73,14 +73,24 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
           <span className="config-detail-label">模型</span>
           <span className="config-detail-value">{config.Model}</span>
         </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">温度</span>
-          <span className="config-detail-value">{config.Temperature}</span>
-        </div>
-        <div className="config-detail-item">
-          <span className="config-detail-label">系统消息</span>
-          <span className="config-detail-value">{config.SystemMessage}</span>
-        </div>
+        
+        {showDetails && (
+          <div className="config-details-section">
+            <h4>详细配置</h4>
+            <div className="config-detail-item">
+              <span className="config-detail-label">温度</span>
+              <span className="config-detail-value">{config.Temperature}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">系统消息</span>
+              <span className="config-detail-value">{config.SystemMessage}</span>
+            </div>
+            <div className="config-detail-item">
+              <span className="config-detail-label">API Key</span>
+              <span className="config-detail-value">******</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
