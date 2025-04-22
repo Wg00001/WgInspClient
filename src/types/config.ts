@@ -1,4 +1,4 @@
-export type Identity = string;
+export type Name = string;
 
 export interface InitConfig {
   ConfigReader: string;
@@ -30,17 +30,18 @@ export interface ConfigMeta extends CommonConfigGroup, TaskConfigGroup, AgentCon
 
 export interface ConfigIndex {
   Default: InitConfig;
-  Task: Record<Identity, TaskConfig>;
-  DB: Record<Identity, DBConfig>;
-  Log: Record<Identity, LogConfig>;
-  Alert: Record<Identity, AlertConfig>;
+  Task: Record<Name, TaskConfig>;
+  DB: Record<Name, DBConfig>;
+  Log: Record<Name, LogConfig>;
+  Alert: Record<Name, AlertConfig>;
   Agent: AgentConfig;
-  AgentTask: Record<Identity, AgentTaskConfig>;
-  KBase: Record<Identity, KnowledgeBaseConfig>;
+  AgentTask: Record<Name, AgentTaskConfig>;
+  KBase: Record<Name, KnowledgeBaseConfig>;
 }
 
 export interface BaseConfig {
-  Identity: Identity;
+  ID: number;
+  Name: Name;
   Driver?: string;
 }
 
@@ -67,10 +68,10 @@ export interface Cron {
 export interface TaskConfig extends BaseConfig {
   Cron: Cron;
   AllInspector: boolean;
-  TargetLogID: Identity;
-  TargetDB: Identity[];
-  Todo: Identity[];
-  NotTodo: Identity[] | null;
+  TargetLogID: Name;
+  TargetDB: Name[];
+  Todo: Name[];
+  NotTodo: Name[] | null;
 }
 
 export interface AgentConfig extends BaseConfig{
@@ -84,18 +85,18 @@ export interface AgentConfig extends BaseConfig{
 export interface LogFilter {
   StartTime: string; // ISO 格式的时间字符串
   EndTime: string; // ISO 格式的时间字符串
-  TaskNames: Identity[] | null;
-  DBNames: Identity[] | null;
+  TaskNames: Name[] | null;
+  DBNames: Name[] | null;
   TaskIDs: string[] | null;
-  InspNames: Identity[] | null;
+  InspNames: Name[] | null;
 }
 
 export interface AgentTaskConfig extends BaseConfig {
   Cron: Cron;
-  LogID: Identity;
+  LogID: Name;
   LogFilter: LogFilter;
-  AlertID: Identity;
-  KBase: Identity[];
+  AlertID: Name;
+  KBase: Name[];
   KBaseResults: number;
   KBaseMaxLen: number;
   SystemMessage: string;
@@ -106,7 +107,7 @@ export interface KnowledgeBaseConfig extends BaseConfig {
 }
 
 export interface InspectorConfig {
-  Identity: string;
+  ID: number;
   Name: string;
   SQL: string;
   AlertID?: string;
@@ -120,7 +121,7 @@ export interface InspTree {
   AllInsp: InspectorConfig[];
 }
 
-export type ConfigType = 'DB' | 'Task' | 'Log' | 'Alert' | 'Agent' | 'Common' | 'AgentTask' | 'KBase' | 'Inspector';
+export type ConfigType = 'db_config' | 'task_config' | 'log_config' | 'alert_config' | 'agent_config' | 'Common' | 'agent_task_config' | 'kbase_config' | 'inspector_config';
 
 export interface ClientMessage {
   action: string;

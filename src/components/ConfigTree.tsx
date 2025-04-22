@@ -20,14 +20,14 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'dbs', name: '数据库配置', type: 'DB' },
-  { id: 'logs', name: '日志配置', type: 'Log' },
-  { id: 'alerts', name: '告警配置', type: 'Alert' },
-  { id: 'agent', name: 'Agent配置', type: 'Agent' },
-  { id: 'knowledge-bases', name: '知识库配置', type: 'Common' },
-  { id: 'inspectors', name: '巡检配置', type: 'Common' },
-  { id: 'tasks', name: '任务配置', type: 'Task' },
-  { id: 'agent-tasks', name: 'Agent任务配置', type: 'Agent' }
+  { id: 'dbs', name: '数据库配置', type: 'db_config' },
+  { id: 'logs', name: '日志配置', type: 'log_config' },
+  { id: 'alerts', name: '告警配置', type: 'alert_config' },
+  { id: 'agent', name: 'Agent配置', type: 'agent_config' },
+  { id: 'knowledge-bases', name: '知识库配置', type: 'inspector_config' }, //C
+  { id: 'inspectors', name: '巡检配置', type: 'inspector_config' },//c
+  { id: 'tasks', name: '任务配置', type: 'task_config' },
+  { id: 'agent-tasks', name: 'Agent任务配置', type: 'agent_task_config' }
 ];
 
 interface ConfigTreeProps {
@@ -206,12 +206,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     wsClient.sendUpdate(type,updatedConfig)
   };
 
-  const handleConfigDelete = (type: ConfigType, identity: string) => {
+  const handleConfigDelete = (type: ConfigType, identity: number) => {
     console.log('Deleting config:', { type, identity });
     wsClient.send({
       action: 'config_delete',
       config_type: type,
-      config_data: { Identity: identity }
+      config_data: { id: identity }
     });
   };
 
@@ -264,7 +264,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>数据库配置</h2>
-              <button onClick={() => handleCreate('DB')} className="btn-create">
+              <button onClick={() => handleCreate('db_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -272,8 +272,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <DBConfigDetail
                 key={index}
                 config={db}
-                onEdit={(config) => handleConfigEdit('DB', config)}
-                onDelete={() => handleConfigDelete('DB', db.Identity)}
+                onEdit={(config) => handleConfigEdit('db_config', config)}
+                onDelete={() => handleConfigDelete('db_config', db.ID)}
               />
             ))}
           </div>
@@ -283,7 +283,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>日志配置</h2>
-              <button onClick={() => handleCreate('Log')} className="btn-create">
+              <button onClick={() => handleCreate('log_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -291,8 +291,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <LogConfigDetail
                 key={index}
                 config={log}
-                onEdit={(config) => handleConfigEdit('Log', config)}
-                onDelete={() => handleConfigDelete('Log', log.Identity)}
+                onEdit={(config) => handleConfigEdit('log_config', config)}
+                onDelete={() => handleConfigDelete('log_config', log.ID)}
               />
             ))}
           </div>
@@ -302,7 +302,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>告警配置</h2>
-              <button onClick={() => handleCreate('Alert')} className="btn-create">
+              <button onClick={() => handleCreate('alert_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -310,8 +310,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <AlertConfigDetail
                 key={index}
                 config={alert}
-                onEdit={(config) => handleConfigEdit('Alert', config)}
-                onDelete={() => handleConfigDelete('Alert', alert.Identity)}
+                onEdit={(config) => handleConfigEdit('alert_config', config)}
+                onDelete={() => handleConfigDelete('alert_config', alert.ID)}
               />
             ))}
           </div>
@@ -321,7 +321,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>任务配置</h2>
-              <button onClick={() => handleCreate('Task')} className="btn-create">
+              <button onClick={() => handleCreate('task_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -329,21 +329,26 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <TaskConfigDetail
                 key={index}
                 config={task}
-                onEdit={(config) => handleConfigEdit('Task', config)}
-                onDelete={() => handleConfigDelete('Task', task.Identity)}
+                onEdit={(config) => handleConfigEdit('task_config', config)}
+                onDelete={() => handleConfigDelete('task_config', task.ID)}
               />
             ))}
           </div>
         );
       case 'agent':
         return (
-          <div className="config-detail">
-            <h2>Agent配置</h2>
+          <div className="config-list">
+            <div className="page-header">
+              <h2>Agent配置</h2>
+              <button onClick={() => handleCreate('agent_config')} className="btn-create">
+                创建
+              </button>
+            </div>
             {configData.Agent && (
               <AgentConfigDetail
                 config={configData.Agent}
-                onEdit={(config) => handleConfigEdit('Agent', config)}
-                onDelete={() => handleConfigDelete('Agent', configData.Agent.Driver)}
+                onEdit={(config) => handleConfigEdit('agent_config', config)}
+                onDelete={() => handleConfigDelete('agent_config', configData.Agent.ID)}
               />
             )}
           </div>
@@ -353,7 +358,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>Agent任务配置</h2>
-              <button onClick={() => handleCreate('AgentTask')} className="btn-create">
+              <button onClick={() => handleCreate('agent_task_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -361,8 +366,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <AgentTaskConfigDetail
                 key={index}
                 config={task}
-                onEdit={(config) => handleConfigEdit('Agent', config)}
-                onDelete={() => handleConfigDelete('Agent', task.Identity)}
+                onEdit={(config) => handleConfigEdit('agent_task_config', config)}
+                onDelete={() => handleConfigDelete('agent_task_config', task.ID)}
               />
             ))}
           </div>
@@ -372,7 +377,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>知识库配置</h2>
-              <button onClick={() => handleCreate('KBase')} className="btn-create">
+              <button onClick={() => handleCreate('kbase_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -380,8 +385,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <KBaseConfigDetail
                 key={index}
                 config={kb}
-                onEdit={(config) => handleConfigEdit('Common', config)}
-                onDelete={() => handleConfigDelete('Common', kb.Identity)}
+                onEdit={(config) => handleConfigEdit('kbase_config', config)}
+                onDelete={() => handleConfigDelete('kbase_config', kb.ID)}
               />
             ))}
           </div>
@@ -391,7 +396,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           <div className="config-list">
             <div className="page-header">
               <h2>巡检配置</h2>
-              <button onClick={() => handleCreate('Inspector')} className="btn-create">
+              <button onClick={() => handleCreate('inspector_config')} className="btn-create">
                 创建
               </button>
             </div>
@@ -399,8 +404,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
               <InspectorConfigDetail
                 key={index}
                 config={insp}
-                onEdit={(config) => handleConfigEdit('Common', config)}
-                onDelete={() => handleConfigDelete('Common', insp.Identity)}
+                onEdit={(config) => handleConfigEdit('inspector_config', config)}
+                onDelete={() => handleConfigDelete('inspector_config', insp.ID)}
               />
             ))}
           </div>
@@ -412,27 +417,27 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
   const getEmptyConfig = (type: ConfigType): any => {
     switch (type) {
-      case 'DB':
+      case 'db_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           DSN: ''
         };
-      case 'Log':
+      case 'log_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           Option: {}
         };
-      case 'Alert':
+      case 'alert_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           Option: {}
         };
-      case 'Task':
+      case 'task_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           Cron: {
             CronTab: '',
@@ -447,9 +452,9 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           Todo: [],
           NotTodo: null
         };
-      case 'Agent':
+      case 'agent_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           Url: '',
           ApiKey: '',
@@ -457,9 +462,9 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           Temperature: 0,
           SystemMessage: ''
         };
-      case 'AgentTask':
+      case 'agent_task_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           Cron: {
             CronTab: '',
@@ -483,9 +488,9 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           KBaseMaxLen: 0,
           SystemMessage: ''
         };
-      case 'KBase':
+      case 'kbase_config':
         return {
-          Identity: '',
+          Name: '',
           Driver: '',
           Value: {
             collection: '',
@@ -497,9 +502,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             }
           }
         };
-      case 'Inspector':
+      case 'inspector_config':
         return {
-          ID: '',
           Name: '',
           SQL: '',
           AlertID: '',

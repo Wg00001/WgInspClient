@@ -49,9 +49,14 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    onDelete?.();
+  const handleConfirmDelete = () => {
+    if (onDelete) {
+      onDelete();
+    }
     setShowDeleteConfirm(false);
+    if (onCancel) {
+      onCancel(); // 删除后退出编辑页面
+    }
   };
 
   const cancelDelete = () => {
@@ -206,7 +211,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
               <button onClick={cancelDelete} className="btn-cancel">
                 取消
               </button>
-              <button onClick={confirmDelete} className="btn-confirm-delete">
+              <button onClick={handleConfirmDelete} className="btn-confirm-delete">
                 确认删除
               </button>
             </div>

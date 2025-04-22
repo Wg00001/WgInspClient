@@ -88,7 +88,7 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
-        <h3>{config.Identity}</h3>
+        <h3>{config.Name}</h3>
         <div className="header-buttons">
           <button onClick={toggleDetails} className="btn-details">
             {showDetails ? '收起详情' : '详细信息'}

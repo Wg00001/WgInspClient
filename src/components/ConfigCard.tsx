@@ -26,7 +26,7 @@ const ConfigCard = ({ config, type }: { config: BaseConfig; type: ConfigType }) 
         <ConfigEditor config={draft} onChange={setDraft} />
       ) : (
         <>
-          <h3>{config.Identity}</h3>
+          <h3>{config.Name}</h3>
           <button onClick={() => setEditMode(true)}>编辑</button>
           <button onClick={handleDelete}>删除</button>
         </>

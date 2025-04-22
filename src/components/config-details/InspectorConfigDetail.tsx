@@ -54,7 +54,7 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
-        <h3>{config.Identity}</h3>
+        <h3>{config.Name || config.ID}</h3>
         <div className="header-buttons">
           {hasChildren && (
             <button onClick={toggleDetails} className="btn-details">
@@ -87,12 +87,12 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
               {config.Children.map((child, index) => (
                 <div key={index} className="inspector-child">
                   <div className="child-header" onClick={() => {}}>
-                    <span className="child-name">{child.Name || child.Identity}</span>
+                    <span className="child-name">{child.Name || child.ID}</span>
                   </div>
                   <div className="child-details">
                     <div className="config-detail-item">
-                      <span className="config-detail-label">Identity</span>
-                      <span className="config-detail-value">{child.Identity}</span>
+                      <span className="config-detail-label">名称</span>
+                      <span className="config-detail-value">{child.Name || child.ID}</span>
                     </div>
                     <div className="config-detail-item">
                       <span className="config-detail-label">SQL</span>
