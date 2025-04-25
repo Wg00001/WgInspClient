@@ -1,59 +1,32 @@
-export type Name = string;
 
-export interface InitConfig {
-  ConfigReader: string;
-  ConfigParser: string;
-  ClientDriver: string;
-  ClientURL: string;
-  Option: Record<string, any>;
-}
-
-export interface CommonConfigGroup {
+export interface ConfigMeta{
   DBs: DBConfig[];
   Logs: LogConfig[];
   Alerts: AlertConfig[];
-}
-
-export interface TaskConfigGroup {
   Tasks: TaskConfig[];
-}
-
-export interface AgentConfigGroup {
   Agent: AgentConfig;
   AgentTasks: AgentTaskConfig[];
   KnowledgeBases: KnowledgeBaseConfig[];
+  Insp: InspectorConfig[];
 }
 
-export interface ConfigMeta extends CommonConfigGroup, TaskConfigGroup, AgentConfigGroup {
-  Insp: InspTree;
-}
-
-export interface ConfigIndex {
-  Default: InitConfig;
-  Task: Record<Name, TaskConfig>;
-  DB: Record<Name, DBConfig>;
-  Log: Record<Name, LogConfig>;
-  Alert: Record<Name, AlertConfig>;
-  Agent: AgentConfig;
-  AgentTask: Record<Name, AgentTaskConfig>;
-  KBase: Record<Name, KnowledgeBaseConfig>;
-}
-
-export interface BaseConfig {
+export interface Identity {
   ID: number;
-  Name: Name;
-  Driver?: string;
+  Name: string;
 }
 
-export interface DBConfig extends BaseConfig {
+export interface DBConfig extends Identity {
+  Driver: string;
   DSN: string;
 }
 
-export interface LogConfig extends BaseConfig {
+export interface LogConfig extends Identity {
+  Driver: string;
   Option: Record<string, string>;
 }
 
-export interface AlertConfig extends BaseConfig {
+export interface AlertConfig extends Identity {
+  Driver: string;
   Option: Record<string, string>;
 }
 
@@ -65,16 +38,17 @@ export interface Cron {
   Monthly: number[] | null;
 }
 
-export interface TaskConfig extends BaseConfig {
+export interface TaskConfig extends Identity {
   Cron: Cron;
   AllInspector: boolean;
-  TargetLogID: Name;
-  TargetDB: Name[];
-  Todo: Name[];
-  NotTodo: Name[] | null;
+  TargetLogID: Identity;
+  TargetDB: Identity[];
+  Todo: Identity[];
+  NotTodo: Identity[] | null;
 }
 
-export interface AgentConfig extends BaseConfig{
+export interface AgentConfig extends Identity{
+  Driver: string;
   Url: string;
   ApiKey: string;
   Model: string;
@@ -85,41 +59,34 @@ export interface AgentConfig extends BaseConfig{
 export interface LogFilter {
   StartTime: string; // ISO 格式的时间字符串
   EndTime: string; // ISO 格式的时间字符串
-  TaskNames: Name[] | null;
-  DBNames: Name[] | null;
+  TaskNames: Identity[] | null;
+  DBNames: Identity[] | null;
   TaskIDs: string[] | null;
-  InspNames: Name[] | null;
+  InspNames: Identity[] | null;
 }
 
-export interface AgentTaskConfig extends BaseConfig {
+export interface AgentTaskConfig extends Identity {
   Cron: Cron;
-  LogID: Name;
+  LogID: Identity;
   LogFilter: LogFilter;
-  AlertID: Name;
-  KBase: Name[];
+  AgentID: Identity;
+  AlertID: Identity;
+  KBaseAgentID: Identity;
+  KBase: Identity[];
   KBaseResults: number;
   KBaseMaxLen: number;
-  SystemMessage: string;
 }
 
-export interface KnowledgeBaseConfig extends BaseConfig {
+export interface KnowledgeBaseConfig extends Identity {
+  Driver: string;
   Value: Record<string, any>;
 }
 
-export interface InspectorConfig {
-  ID: number;
-  Name: string;
+export interface InspectorConfig extends Identity{
   SQL: string;
-  AlertID?: string;
   AlertWhen?: string;
-  Children?: InspectorConfig[];
 }
 
-export interface InspTree {
-  Roots: Record<string, InspectorConfig>;
-  Num: number;
-  AllInsp: InspectorConfig[];
-}
 
 export type ConfigType = 'db_config' | 'task_config' | 'log_config' | 'alert_config' | 'agent_config' | 'Common' | 'agent_task_config' | 'kbase_config' | 'inspector_config';
 

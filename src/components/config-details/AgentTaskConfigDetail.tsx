@@ -62,16 +62,16 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
       </div>
       <div className="config-detail-content">
         <div className="config-detail-item">
-          <span className="config-detail-label">驱动</span>
-          <span className="config-detail-value">{config.Driver}</span>
+          <span className="config-detail-label">分析AI</span>
+          <span className="config-detail-value">{config.AgentID.Name}</span>
         </div>
         <div className="config-detail-item">
           <span className="config-detail-label">日志ID</span>
-          <span className="config-detail-value">{config.LogID}</span>
+          <span className="config-detail-value">{config.LogID.Name}</span>
         </div>
         <div className="config-detail-item">
           <span className="config-detail-label">告警ID</span>
-          <span className="config-detail-value">{config.AlertID}</span>
+          <span className="config-detail-value">{config.AlertID.Name}</span>
         </div>
         <div className="config-detail-item">
           <span className="config-detail-label">知识库</span>
@@ -107,10 +107,6 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
             <div className="config-detail-item">
               <span className="config-detail-label">知识库最大长度</span>
               <span className="config-detail-value">{config.KBaseMaxLen}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">系统消息</span>
-              <span className="config-detail-value">{config.SystemMessage}</span>
             </div>
             <div className="config-detail-item">
               <span className="config-detail-label">日志过滤开始时间</span>
