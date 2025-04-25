@@ -31,10 +31,6 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
     }
   };
 
-  const toggleDetails = () => {
-    setShowDetails(!showDetails);
-  };
-
 
   if (isEditing) {
     return (
@@ -53,7 +49,7 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
   return (
     <div className="config-detail-card">
       <div className="config-detail-header">
-        <h3>{config.Name || config.ID}</h3>
+        <h3>{config.Name}</h3>
         <div className="header-buttons">
           <button onClick={handleEdit} className="btn-edit">修改配置</button>
         </div>

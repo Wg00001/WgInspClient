@@ -1,4 +1,4 @@
-import { ResponseMsg } from '../types/config';
+import { ResponseMsg, ConfigType, ClientMessage } from '../types/config';
 import { Notice, NoticeConfirmStatus, NoticeRequest } from '../types/notice';
 // 新增类型声明
 type ServerMessage = {
@@ -7,32 +7,24 @@ type ServerMessage = {
   timestamp?: number;
 };
 
-export interface ClientMessage {
-  action: string;
-  config_type?: string;
-  config_data?: any;
-  old_password?: string;
-  new_password?: string;
-  auth_token?: string;
-}
-
 const RECONNECT_INTERVALS = [1000, 3000, 5000, 10000];
 
-const CONFIG_TYPES = [
-  'Log',
-  'DB',
-  'Alert',
-  'Task',
-  'Agent',
-  'AgentTask',
-  'KBase',
-  'Inspector'
+// 更新为符合 ConfigType 的定义
+const CONFIG_TYPES: ConfigType[] = [
+  'db_config',
+  'log_config',
+  'alert_config',
+  'task_config',
+  'agent_config',
+  'agent_task_config',
+  'kbase_config',
+  'inspector_config'
 ];
 
 
 export class WSClient {
   private ws: WebSocket | null = null;
-  private messageHandlers: Map<string, (data: any) => void> = new Map();
+  private messageHandlers: Map<string, (data: ResponseMsg) => void> = new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
@@ -85,7 +77,7 @@ export class WSClient {
         // 设置消息处理器
         const messageHandler = (event: MessageEvent) => {
           try {
-            const message = JSON.parse(event.data);
+            const message: ResponseMsg = JSON.parse(event.data);
             console.log('认证过程收到消息:', message);
 
             if (message.action === 'authenticate_response') {
@@ -101,10 +93,10 @@ export class WSClient {
                 this.ws!.onmessage = this.handleMessage;
                 resolve();
               } else {
-                console.error('认证失败:', message.error);
+                console.error('认证失败:', message.message);
                 this.isAuthenticated = false;
                 this.disconnect();
-                reject(new Error(message.error || '认证失败'));
+                reject(new Error(message.message || '认证失败'));
               }
             }
           } catch (error) {
@@ -147,14 +139,14 @@ export class WSClient {
         config_type: 'auth'
       };
 
-      const handler = (response: any) => {
+      const handler = (response: ResponseMsg) => {
         if (response.action === 'change_password_response') {
           this.messageHandlers.delete('change_password_response');
           if (response.success) {
             this.credentials.password = newPassword;
             resolve();
           } else {
-            reject(new Error(response.error || 'Failed to change password'));
+            reject(new Error(response.message || 'Failed to change password'));
           }
         }
       };
@@ -172,7 +164,7 @@ export class WSClient {
     }
   }
 
-  public onMessage(action: string, handler: (data: any) => void) {
+  public onMessage(action: string, handler: (data: ResponseMsg) => void) {
     this.messageHandlers.set(action, handler);
   }
 
@@ -187,7 +179,7 @@ export class WSClient {
     }
   }
 
-  subscribe<T>(type: string, callback: (data: T) => void) {
+  subscribe<T>(type: string, callback: (data: ResponseMsg) => void) {
     console.log(`Subscribing to message type: ${type}`);
     const listeners = this.listeners.get(type) || [];
     this.listeners.set(type, [...listeners, callback]);
@@ -294,7 +286,7 @@ export class WSClient {
       }
 
       // 处理配置元数据
-      if (message.action === 'config_get' && message.config_type === 'Meta') {
+      if (message.action === 'config_get' && message.config_type as string === 'meta') {
         console.log('检测到配置元数据');
         const handlers = this.listeners.get('ConfigMeta');
         if (handlers) {
@@ -344,7 +336,7 @@ export class WSClient {
     }
   };
 
-  public sendUpdate(configType: string, configData: any) {
+  public sendUpdate(configType: ConfigType, configData: any) {
     this.send({
       action: 'config_update',
       config_type: configType,
@@ -352,7 +344,7 @@ export class WSClient {
     });
   }
 
-  public sendCreate(configType: string, configData: any) {
+  public sendCreate(configType: ConfigType, configData: any) {
     this.send({
       action: 'config_create',
       config_type: configType,
@@ -360,7 +352,7 @@ export class WSClient {
     });
   }
 
-  public sendDelete(configType: string, configData: any) {
+  public sendDelete(configType: ConfigType, configData: any) {
     this.send({
       action: 'config_delete',
       config_type: configType,

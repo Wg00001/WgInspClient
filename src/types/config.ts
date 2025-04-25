@@ -1,4 +1,3 @@
-
 export interface ConfigMeta{
   DBs: DBConfig[];
   Logs: LogConfig[];
@@ -87,21 +86,20 @@ export interface InspectorConfig extends Identity{
   AlertWhen?: string;
 }
 
-
 export type ConfigType = 'db_config' | 'task_config' | 'log_config' | 'alert_config' | 'agent_config' | 'Common' | 'agent_task_config' | 'kbase_config' | 'inspector_config';
 
 export interface ClientMessage {
   action: string;
-  config_type?: string;
+  config_type?: ConfigType | string;
   config_data?: any;
   old_password?: string;
   new_password?: string;
   auth_token?: string;
-} 
+}
 
 export interface ResponseMsg {
   action: string;
-  config_type: string;
+  config_type: ConfigType | string;
   success: boolean;
   message: string;
   config_data: any;

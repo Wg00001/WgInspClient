@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { wsClient } from '../services/wsClient';
-import { ConfigMeta, ConfigType, InspectorConfig } from '../types/config';
+import { ConfigMeta, ConfigType, InspectorConfig, ResponseMsg } from '../types/config';
 import DBConfigDetail from './config-details/DBConfigDetail';
 import LogConfigDetail from './config-details/LogConfigDetail';
 import AlertConfigDetail from './config-details/AlertConfigDetail';
@@ -24,8 +24,8 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'logs', name: '日志配置', type: 'log_config' },
   { id: 'alerts', name: '告警配置', type: 'alert_config' },
   { id: 'agent', name: 'Agent配置', type: 'agent_config' },
-  { id: 'knowledge-bases', name: '知识库配置', type: 'inspector_config' }, //C
-  { id: 'inspectors', name: '巡检配置', type: 'inspector_config' },//c
+  { id: 'knowledge-bases', name: '知识库配置', type: 'kbase_config' },
+  { id: 'inspectors', name: '巡检配置', type: 'inspector_config' },
   { id: 'tasks', name: '任务配置', type: 'task_config' },
   { id: 'agent-tasks', name: 'Agent任务配置', type: 'agent_task_config' }
 ];
@@ -72,7 +72,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       setIsLoading(false);
     };
 
-    const handleConfigMeta = (meta: any) => {
+    const handleConfigMeta = (meta: ResponseMsg) => {
       try {
         console.log('接收到配置元数据:', meta);
         if (meta && meta.success && meta.config_data) {
@@ -95,7 +95,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       }
     };
 
-    const handleConfigUpdate = (message: any) => {
+    const handleConfigUpdate = (message: ResponseMsg) => {
       console.log('ConfigTree接收到配置更新:', message);
 
       if (!message.config_data) {
@@ -110,34 +110,35 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       const newConfigData = { ...configData };
       console.log('更新前的配置数据:', newConfigData);
       
+      // 根据配置类型更新数据
       switch (message.config_type) {
-        case 'DB':
+        case 'db_config':
           newConfigData.DBs = message.config_data;
           break;
-        case 'Log':
+        case 'log_config':
           newConfigData.Logs = message.config_data;
           break;
-        case 'Alert':
+        case 'alert_config':
           newConfigData.Alerts = message.config_data;
           break;
-        case 'Task':
+        case 'task_config':
           console.log('更新任务配置数据:', message.config_data);
           newConfigData.Tasks = message.config_data;
           break;
-        case 'Agent':
+        case 'agent_config':
           if (message.config_data.length === 1) {
             newConfigData.Agent = message.config_data[0];
           }
           break;
-        case 'AgentTask':
+        case 'agent_task_config':
           newConfigData.AgentTasks = message.config_data;
           break;
-        case 'KBase':
+        case 'kbase_config':
           newConfigData.KnowledgeBases = message.config_data;
           break;
-        case 'Inspector':
+        case 'inspector_config':
           if (newConfigData.Insp) {
-            newConfigData.Insp.AllInsp = message.config_data;
+            newConfigData.Insp = message.config_data;
           }
           break;
       }
@@ -153,34 +154,28 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     wsClient.subscribe<ConfigMeta>('ConfigMeta', handleConfigMeta);
 
     // 订阅配置更新消息
-    wsClient.subscribe('config_update', (message: any) => {
+    wsClient.subscribe('config_update', (message: ResponseMsg) => {
       console.log('ConfigTree收到config_update消息:', message);
       if (message.success === false) {
         handleErrorMessage(message.message || '配置更新失败');
         return;
       }
       // 直接使用消息中的字段
-      handleConfigUpdate({
-        config_type: message.config_type,
-        config_data: message.config_data
-      });
+      handleConfigUpdate(message);
     });
 
     // 订阅配置创建消息
-    wsClient.subscribe('config_create', (message: any) => {
+    wsClient.subscribe('config_create', (message: ResponseMsg) => {
       console.log('ConfigTree收到config_create消息:', message);
       if (message.success === false) {
         handleErrorMessage(message.message || '配置创建失败');
         return;
       }
-      handleConfigUpdate({
-        config_type: message.config_type,
-        config_data: message.config_data
-      });
+      handleConfigUpdate(message);
     });
 
     // 处理任务执行响应
-    const handleTaskDoResponse = (message: any) => {
+    const handleTaskDoResponse = (message: ResponseMsg) => {
       if (message.action === 'task_do') {
         setRunningTasks(prev => {
           const newSet = new Set(prev);
@@ -203,16 +198,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
   const handleConfigEdit = (type: ConfigType, updatedConfig: any) => {
     console.log('Saving config update:', { type, config: updatedConfig });
-    wsClient.sendUpdate(type,updatedConfig)
+    wsClient.sendUpdate(type, updatedConfig);
   };
 
   const handleConfigDelete = (type: ConfigType, identity: number) => {
     console.log('Deleting config:', { type, identity });
-    wsClient.send({
-      action: 'config_delete',
-      config_type: type,
-      config_data: { id: identity }
-    });
+    wsClient.sendDelete(type, { id: identity });
   };
 
 
@@ -221,15 +212,11 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     setCreatingType(type);
   };
 
-  const handleConfigCreate = (newConfig: ConfigType) => {
+  const handleConfigCreate = (newConfig: any) => {
     if (creatingType) {
       console.log('创建新配置:', { type: creatingType, config: newConfig });
       // 先发送创建请求
-      wsClient.send({
-        action: 'config_create',
-        config_type: creatingType,
-        config_data: newConfig
-      });
+      wsClient.sendCreate(creatingType, newConfig);
       setIsCreating(false);
       // setCreatingType(creatingType);
     }
@@ -400,7 +387,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Insp?.AllInsp?.map((insp, index) => (
+            {configData.Insp?.map((insp, index) => (
               <InspectorConfigDetail
                 key={index}
                 config={insp}
@@ -438,7 +425,6 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'task_config':
         return {
           Name: '',
-          Driver: '',
           Cron: {
             CronTab: '',
             Duration: 0,
@@ -447,7 +433,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             Monthly: null
           },
           AllInspector: false,
-          LogID: '',
+          TargetLogID: { ID: 0, Name: '' },
           TargetDB: [],
           Todo: [],
           NotTodo: null
@@ -465,7 +451,6 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'agent_task_config':
         return {
           Name: '',
-          Driver: '',
           Cron: {
             CronTab: '',
             Duration: 0,
@@ -473,7 +458,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             Weekly: null,
             Monthly: null
           },
-          LogID: '',
+          LogID: { ID: 0, Name: '' },
           LogFilter: {
             StartTime: '',
             EndTime: '',
@@ -482,11 +467,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             TaskIDs: null,
             InspNames: null
           },
-          AlertID: '',
+          AgentID: { ID: 0, Name: '' },
+          AlertID: { ID: 0, Name: '' },
+          KBaseAgentID: { ID: 0, Name: '' },
           KBase: [],
           KBaseResults: 0,
-          KBaseMaxLen: 0,
-          SystemMessage: ''
+          KBaseMaxLen: 0
         };
       case 'kbase_config':
         return {
@@ -506,9 +492,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Name: '',
           SQL: '',
-          AlertID: '',
-          AlertWhen: '',
-          Children: []
+          AlertWhen: ''
         };
       default:
         return {};
