@@ -58,7 +58,7 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="AgentTask"
+          type="agent_task_config"
         />
       </div>
     );

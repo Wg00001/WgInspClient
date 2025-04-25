@@ -43,7 +43,7 @@ const KBaseConfigDetail: React.FC<KBaseConfigDetailProps> = ({ config, onEdit, o
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="KBase"
+          type="kbase_config"
         />
       </div>
     );

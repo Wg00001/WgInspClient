@@ -336,6 +336,13 @@ export class WSClient {
     }
   };
 
+  public sendGetIdRequest(configType: ConfigType){
+    this.send({
+      action: 'config_get_id',
+      config_type: configType
+    })
+  }
+
   public sendUpdate(configType: ConfigType, configData: any) {
     this.send({
       action: 'config_update',

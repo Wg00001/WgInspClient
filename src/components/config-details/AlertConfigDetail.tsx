@@ -43,7 +43,7 @@ const AlertConfigDetail: React.FC<AlertConfigDetailProps> = ({ config, onEdit, o
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="Alert"
+          type="alert_config"
         />
       </div>
     );

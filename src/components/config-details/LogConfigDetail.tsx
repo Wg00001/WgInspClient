@@ -43,7 +43,7 @@ const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDel
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="Log"
+          type="log_config"
         />
       </div>
     );

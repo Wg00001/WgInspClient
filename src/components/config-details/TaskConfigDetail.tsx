@@ -43,7 +43,7 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="Task"
+          type="task_config"
         />
       </div>
     );

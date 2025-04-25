@@ -43,7 +43,7 @@ const AgentConfigDetail: React.FC<AgentConfigDetailProps> = ({ config, onEdit, o
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="Agent"
+          type="agent_config"
         />
       </div>
     );

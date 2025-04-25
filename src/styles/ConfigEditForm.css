@@ -192,4 +192,85 @@
 
 .btn-confirm-delete:hover {
   background-color: #ff7875;
+}
+
+/* Identity数组字段样式 */
+.identity-array-field {
+  margin-bottom: 15px;
+}
+
+.selected-identities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.selected-identity {
+  display: flex;
+  align-items: center;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+
+.btn-remove-identity {
+  background: none;
+  border: none;
+  color: #ff4d4f;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 5px;
+  padding: 0 5px;
+}
+
+.btn-add-identity {
+  background-color: #e6f7ff;
+  border: 1px dashed #1890ff;
+  color: #1890ff;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Identity选择器弹出面板 */
+.identity-selector {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 20px;
+  z-index: 1000;
+  min-width: 300px;
+  max-width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.identity-selector h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.identity-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+.identity-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.identity-option:hover {
+  background-color: #f5f5f5;
 } 

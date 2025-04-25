@@ -43,7 +43,7 @@ const DBConfigDetail: React.FC<DBConfigDetailProps> = ({ config, onEdit, onDelet
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="DB"
+          type="db_config"
         />
       </div>
     );

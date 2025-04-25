@@ -40,7 +40,7 @@ const InspectorConfigDetail: React.FC<InspectorConfigDetailProps> = ({ config, o
           onCancel={handleCancel}
           onSave={handleSave}
           onDelete={handleDelete}
-          type="Inspector"
+          type="inspector_config"
         />
       </div>
     );
