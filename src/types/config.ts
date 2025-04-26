@@ -3,10 +3,10 @@ export interface ConfigMeta{
   Logs: LogConfig[];
   Alerts: AlertConfig[];
   Tasks: TaskConfig[];
-  Agent: AgentConfig;
+  Agents: AgentConfig[];
   AgentTasks: AgentTaskConfig[];
-  KnowledgeBases: KnowledgeBaseConfig[];
-  Insp: InspectorConfig[];
+  KBases: KnowledgeBaseConfig[];
+  InspNodes: InspectorConfig[];
 }
 
 export interface Identity {

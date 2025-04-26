@@ -286,11 +286,20 @@ export class WSClient {
       }
 
       // 处理配置元数据
-      if (message.action === 'config_get' && message.config_type as string === 'meta') {
+      if (message.action === 'config_get' && (message.config_type === 'Meta' || message.config_type === 'meta')) {
         console.log('检测到配置元数据');
-        const handlers = this.listeners.get('ConfigMeta');
-        if (handlers) {
-          handlers.forEach(handler => handler(message));
+        // 同时支持 ConfigMeta 和 config_get 两种订阅方式
+        const configMetaHandlers = this.listeners.get('ConfigMeta');
+        if (configMetaHandlers) {
+          configMetaHandlers.forEach(handler => handler(message));
+        }
+        
+        const configGetHandlers = this.listeners.get('config_get');
+        if (configGetHandlers) {
+          console.log('找到config_get订阅处理程序，正在调用...');
+          configGetHandlers.forEach(handler => handler(message));
+        } else {
+          console.log('未找到config_get的订阅处理程序');
         }
         return;
       }
@@ -328,6 +337,15 @@ export class WSClient {
         const handlers = this.listeners.get('task_listen');
         if (handlers) {
           handlers.forEach(handler => handler(message));
+        }
+      }
+
+      // 通用的action处理，如果前面的特定处理都没有匹配
+      if (message.action) {
+        const actionHandlers = this.listeners.get(message.action);
+        if (actionHandlers) {
+          console.log(`找到action=${message.action}的处理程序`);
+          actionHandlers.forEach(handler => handler(message));
         }
       }
 

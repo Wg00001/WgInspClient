@@ -57,11 +57,28 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   // 初始化请求函数
   const initializeData = () => {
     console.log('正在初始化配置数据...');
+    // 重置状态
+    setIsLoading(true); 
+    setError(null);
+    
+    // 发送请求
     wsClient.send({
       action: 'config_get',
       config_type: 'Meta',
       config_data: null
     });
+    
+    // 设置超时，防止请求永远不返回
+    setTimeout(() => {
+      setIsLoading((current) => {
+        if (current) {
+          console.error('配置请求超时，未收到响应');
+          setError('加载超时，请刷新页面重试');
+          return false;
+        }
+        return current;
+      });
+    }, 5000);
   };
 
   useEffect(() => {
@@ -74,10 +91,16 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
     const handleConfigMeta = (meta: ResponseMsg) => {
       try {
-        console.log('接收到配置元数据:', meta);
+        console.log('接收到配置元数据:', JSON.stringify(meta, null, 2));
+        
         if (meta && meta.success && meta.config_data) {
-          console.log('配置数据有效，更新状态');
+          console.log('配置数据有效，尝试更新状态');
+          console.log('配置数据字段:', Object.keys(meta.config_data));
+          
+          // 直接尝试使用响应的config_data
           setConfigData(meta.config_data);
+          console.log('状态更新后的ConfigData:', meta.config_data);
+          
           setError(null);
         } else {
           console.error('无效的配置元数据格式:', meta);
@@ -127,19 +150,17 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           break;
         case 'agent_config':
           if (message.config_data.length === 1) {
-            newConfigData.Agent = message.config_data[0];
+            newConfigData.Agents = message.config_data;
           }
           break;
         case 'agent_task_config':
           newConfigData.AgentTasks = message.config_data;
           break;
         case 'kbase_config':
-          newConfigData.KnowledgeBases = message.config_data;
+          newConfigData.KBases = message.config_data;
           break;
         case 'inspector_config':
-          if (newConfigData.Insp) {
-            newConfigData.Insp = message.config_data;
-          }
+          newConfigData.InspNodes = message.config_data;
           break;
       }
 
@@ -148,10 +169,18 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       setConfigData(newConfigData);
     };
 
-    //subcribe为客户端收到消息后进行的操作
-
-    // 订阅配置元数据
-    wsClient.subscribe<ConfigMeta>('ConfigMeta', handleConfigMeta);
+    // 订阅配置元数据 - 首先确保已经订阅
+    console.log('正在订阅config_get消息...');
+    wsClient.subscribe('config_get', (message: ResponseMsg) => {
+      console.log('ConfigTree收到config_get消息:', message);
+      if (message.success === false) {
+        handleErrorMessage(message.message || '配置获取失败');
+        setIsLoading(false); // 确保即使失败也设置加载状态为false
+        return;
+      }
+      // 直接使用消息中的字段
+      handleConfigMeta(message);
+    });
 
     // 订阅配置更新消息
     wsClient.subscribe('config_update', (message: ResponseMsg) => {
@@ -174,23 +203,16 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       handleConfigUpdate(message);
     });
 
-    // 处理任务执行响应
-    const handleTaskDoResponse = (message: ResponseMsg) => {
-      if (message.action === 'task_do') {
-        setRunningTasks(prev => {
-          const newSet = new Set(prev);
-          // 使用config_data中的UUID来移除正在运行的任务
-          newSet.delete(message.config_data);
-          return newSet;
-        });
-      }
-    };
+    // 确保已订阅后再发送请求
+    setTimeout(() => {
+      console.log('开始初始化数据...');
+      initializeData();
+    }, 500);
 
-    // 发送初始化请求
-    initializeData();
-
+    // Cleanup function
     return () => {
-      wsClient.unsubscribe('ConfigMeta');
+      console.log('ConfigTree组件卸载，清理订阅');
+      wsClient.unsubscribe('config_get');
       wsClient.unsubscribe('config_update');
       wsClient.unsubscribe('config_create');
     };
@@ -331,13 +353,14 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Agent && (
+            {configData.Agents && configData.Agents.length > 0 && configData.Agents.map((agent, index) => (
               <AgentConfigDetail
-                config={configData.Agent}
+                key={index}
+                config={agent}
                 onEdit={(config) => handleConfigEdit('agent_config', config)}
-                onDelete={() => handleConfigDelete('agent_config', configData.Agent.ID)}
+                onDelete={() => handleConfigDelete('agent_config', agent.ID)}
               />
-            )}
+            ))}
           </div>
         );
       case 'agent-tasks':
@@ -368,7 +391,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.KnowledgeBases?.map((kb, index) => (
+            {configData.KBases?.map((kb, index) => (
               <KBaseConfigDetail
                 key={index}
                 config={kb}
@@ -387,7 +410,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.Insp?.map((insp, index) => (
+            {configData.InspNodes?.map((insp, index) => (
               <InspectorConfigDetail
                 key={index}
                 config={insp}
@@ -533,12 +556,16 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         </div>
       </div>
       <div className="config-content">
+
+        
         {isLoading ? (
           <div className="loading">加载中...</div>
         ) : error ? (
           <div className="error">{error}</div>
-        ) : (
+        ) : configData ? (
           renderConfigContent()
+        ) : (
+          <div className="error">加载配置失败，未收到有效数据</div>
         )}
       </div>
     </div>
