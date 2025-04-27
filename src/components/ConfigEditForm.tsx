@@ -286,17 +286,14 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       return renderIdentityArrayField(field, value, label);
     }
 
-    if (field === 'Identity') {
+    if (field === 'ID' || field === 'Name') {
       return (
-        <div className="form-group" key={field}>
-          <label>{label}</label>
-          <input
-            type="text"
-            value={value || ''}
-            onChange={(e) => handleChange(field, e.target.value)}
-            className="form-control"
-          />
+      <div className="form-group" key={field}>
+        <label>{label}</label>
+        <div className="form-control-static"> 
+          {value || '-'}
         </div>
+      </div>
       );
     }
 
@@ -430,6 +427,8 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     );
   };
 
+
+  
   return (
     <form onSubmit={handleSubmit} className="config-edit-form">
       {Object.entries(formData).map(([field, value]) => renderField(field, value, field))}

@@ -8,7 +8,7 @@ import TaskConfigDetail from './config-details/TaskConfigDetail';
 import AgentConfigDetail from './config-details/AgentConfigDetail';
 import AgentTaskConfigDetail from './config-details/AgentTaskConfigDetail';
 import KBaseConfigDetail from './config-details/KBaseConfigDetail';
-import InspectorConfigDetail from './config-details/InspectorConfigDetail';
+import InspectorConfigTable from './config-details/InspectorConfigTable';
 import ConfigEditForm from './ConfigEditForm';
 import '../styles/ConfigTree.css';
 
@@ -43,6 +43,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [creatingType, setCreatingType] = useState<ConfigType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set());
+  const [creatingChildParent, setCreatingChildParent] = useState<InspectorConfig | null>(null);
 
   // 处理错误消息的函数
   const handleErrorMessage = (message: string) => {
@@ -410,14 +411,25 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                 创建
               </button>
             </div>
-            {configData.InspNodes?.map((insp, index) => (
-              <InspectorConfigDetail
-                key={index}
-                config={insp}
-                onEdit={(config) => handleConfigEdit('inspector_config', config)}
-                onDelete={() => handleConfigDelete('inspector_config', insp.ID)}
-              />
-            ))}
+            {creatingChildParent && (
+              <div className="config-edit-container">
+                <ConfigEditForm
+                  config={{ Name: '', SQL: '', AlertWhen: '', Parent: { ID: creatingChildParent.ID, Name: creatingChildParent.Name } }}
+                  onCancel={() => setCreatingChildParent(null)}
+                  onSave={(newConfig) => {
+                    wsClient.sendCreate('inspector_config', newConfig);
+                    setCreatingChildParent(null);
+                  }}
+                  type="inspector_config"
+                />
+              </div>
+            )}
+            <InspectorConfigTable
+              data={configData.InspNodes || []}
+              onEdit={(config) => handleConfigEdit('inspector_config', config)}
+              onDelete={(id) => handleConfigDelete('inspector_config', id)}
+              onCreate={(parent) => setCreatingChildParent(parent)}
+            />
           </div>
         );
       default:

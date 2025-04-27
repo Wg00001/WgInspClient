@@ -84,6 +84,7 @@ export interface KnowledgeBaseConfig extends Identity {
 export interface InspectorConfig extends Identity{
   SQL: string;
   AlertWhen?: string;
+  Children?: InspectorConfig[];
 }
 
 export type ConfigType = 'db_config' | 'task_config' | 'log_config' | 'alert_config' | 'agent_config' | 'Common' | 'agent_task_config' | 'kbase_config' | 'inspector_config';

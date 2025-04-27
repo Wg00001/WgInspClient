@@ -65,7 +65,7 @@ const LogConfigDetail: React.FC<LogConfigDetailProps> = ({ config, onEdit, onDel
           <span className="config-detail-label">驱动</span>
           <span className="config-detail-value">{config.Driver}</span>
         </div>
-        {showDetails && (
+        {showDetails && config.Option!=null &&(
           <>
             {Object.entries(config.Option).map(([key, value]) => (
               <div key={key} className="config-detail-item">
