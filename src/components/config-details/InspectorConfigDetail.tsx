@@ -12,6 +12,7 @@ interface InspectorConfigRowProps {
   expanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  tdClassName?: Record<string, string>;
 }
 
 const MAX_CELL_LENGTH = 40;
@@ -31,7 +32,8 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
   hasChildren = false,
   expanded = false,
   onExpand,
-  onCollapse
+  onCollapse,
+  tdClassName
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editSQL, setEditSQL] = useState(config.SQL);
@@ -94,14 +96,14 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
           ) : null}
         </td>
         <td className="cell-ellipsis">{ellipsis(config.Name, 20)}</td>
-        <td className="cell-ellipsis">{ellipsis(config.SQL)}</td>
-        <td className="cell-ellipsis">{ellipsis(config.AlertWhen || '无')}</td>
+        <td className={tdClassName?.SQL || "cell-ellipsis"}>{ellipsis(config.SQL)}</td>
+        <td className={tdClassName?.Condition || "cell-ellipsis"}>{ellipsis(config.AlertWhen || '无')}</td>
         <td style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button onClick={handleShowDetail} className="btn-details">详情</button>
           <button onClick={handleEdit} className="btn-edit">编辑</button>
         </td>
         <td>
-          <button onClick={handleCreate} className="btn-edit">创建</button>
+          <button onClick={handleCreate} className="btn-create">创建</button>
         </td>
       </tr>
       {/* 编辑弹窗 */}
@@ -145,8 +147,8 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
               <div className="modal-content" style={{ minWidth: 400 }}>
                 <h3>巡检配置详情</h3>
                 <div className="form-group"><label>名称</label><div>{config.Name}</div></div>
-                <div className="form-group"><label>SQL</label><div style={{ whiteSpace: 'pre-wrap' }}>{config.SQL}</div></div>
-                <div className="form-group"><label>告警条件</label><div style={{ whiteSpace: 'pre-wrap' }}>{config.AlertWhen || '无'}</div></div>
+                <div className="form-group"><label>SQL</label><div className="cell-wrap-content">{config.SQL}</div></div>
+                <div className="form-group"><label>告警条件</label><div className="cell-wrap-content">{config.AlertWhen || '无'}</div></div>
                 <div className="form-group"><label>子节点数量</label><div>{config.Children ? config.Children.length : 0}</div></div>
                 <div className="modal-actions">
                   <button onClick={handleCloseDetail} className="btn-cancel">关闭</button>
@@ -160,7 +162,7 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
       {showDeleteConfirm && (
         <tr>
           <td colSpan={6}>
-            <div className="delete-confirm-modal">
+            <div className="delete-confirm-modal" style={{ zIndex: 1100 }}>
               <div className="modal-content">
                 <p>确定要删除此巡检配置吗？此操作不可恢复。</p>
                 <div className="modal-actions">

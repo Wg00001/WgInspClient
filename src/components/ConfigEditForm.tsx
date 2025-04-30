@@ -12,16 +12,24 @@ interface ConfigEditFormProps {
 }
 
 // 标识哪些字段是 Identity[] 类型，以便特殊处理
-const identityArrayFields: Record<string, Record<string, ConfigType>> = {
+const identityArrayFields: Record<string, { type: ConfigType }> = {
   // TaskConfig 相关字段
   'TargetDB': { type: 'db_config' },
   'Todo': { type: 'inspector_config' },
   'NotTodo': { type: 'inspector_config' },
+  'TargetLogID': { type: 'log_config' },
+  
   // AgentTaskConfig 相关字段
   'KBase': { type: 'kbase_config' },
-  'TaskNames': { type: 'task_config' }, // LogFilter 子字段
-  'DBNames': { type: 'db_config' }, // LogFilter 子字段
-  'InspNames': { type: 'inspector_config' } // LogFilter 子字段
+  'LogID': { type: 'log_config' },
+  'AgentID': { type: 'agent_config' },
+  'AlertID': { type: 'alert_config' },
+  'KBaseAgentID': { type: 'agent_config' },
+  
+  // LogFilter 子字段
+  'TaskNames': { type: 'task_config' },
+  'DBNames': { type: 'db_config' },
+  'InspNames': { type: 'inspector_config' }
 };
 
 const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSave, onDelete, type }) => {
@@ -29,13 +37,9 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [identityOptions, setIdentityOptions] = useState<Record<string, Identity[]>>({});
   const [selectedField, setSelectedField] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   useEffect(() => {
-    // 为所有 Identity[] 类型的字段预先加载可选值
-    Object.entries(identityArrayFields).forEach(([field, { type }]) => {
-      wsClient.sendGetIdRequest(type as ConfigType);
-    });
-    
     // 监听服务端响应
     const handleGetIdResponse = (response: any) => {
       if (response.action === 'config_get_id' && response.success && response.config_data) {
@@ -52,6 +56,26 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       wsClient.unsubscribe('config_get_id');
     };
   }, []);
+
+  // 当用户点击添加按钮时，加载相应类型的配置项列表
+  const loadIdentityOptions = (configType: ConfigType) => {
+    // 检查是否已经加载过
+    if (!identityOptions[configType] || identityOptions[configType].length === 0) {
+      wsClient.sendGetIdRequest(configType);
+    }
+  };
+
+  // 处理展示 Identity 选择器
+  const handleShowIdentitySelector = (field: string, configType: ConfigType) => {
+    loadIdentityOptions(configType);
+    setSelectedField(field);
+  };
+
+  // 处理展示嵌套字段的 Identity 选择器
+  const handleShowNestedIdentitySelector = (parent: string, field: string, configType: ConfigType) => {
+    loadIdentityOptions(configType);
+    setSelectedField(`${parent}.${field}`);
+  };
 
   const handleChange = (field: string, value: any) => {
     if (field === 'Cron' && typeof value === 'object' && 'Duration' in value) {
@@ -81,6 +105,21 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 验证必填字段
+    const errors: Record<string, string> = {};
+    
+    // Name 是必填的
+    if (!formData.Name || formData.Name.trim() === '') {
+      errors.Name = '名称不能为空';
+    }
+    
+    // 如果有错误，显示错误并阻止提交
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    
     // 在提交前确保 Cron.Duration 是数字
     const processedData = { ...formData };
     if (processedData.Cron?.Duration) {
@@ -116,12 +155,27 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
   // 处理添加 Identity 到数组
   const handleAddIdentity = (field: string, identity: Identity) => {
-    // 检查是否已存在该 Identity
-    const currentArray = formData[field] || [];
-    const exists = currentArray.some((item: Identity) => item.ID === identity.ID);
+    // 检查字段是否是嵌套字段
+    if (field.includes('.')) {
+      const [parent, childField] = field.split('.');
+      handleAddNestedIdentity(parent, childField, identity);
+      return;
+    }
     
-    if (!exists) {
-      handleChange(field, [...currentArray, identity]);
+    // 检查字段当前值类型
+    const currentValue = formData[field];
+    
+    // 如果当前值是数组，将 identity 添加到数组
+    if (Array.isArray(currentValue)) {
+      // 检查是否已存在该 Identity
+      const exists = currentValue.some((item: Identity) => item.ID === identity.ID);
+      
+      if (!exists) {
+        handleChange(field, [...currentValue, identity]);
+      }
+    } else {
+      // 如果当前值不是数组，直接将 identity 赋值给该字段
+      handleChange(field, identity);
     }
     
     // 关闭选择面板
@@ -233,7 +287,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
         </div>
         <button
           type="button"
-          onClick={() => setSelectedField(field)}
+          onClick={() => handleShowIdentitySelector(field, configType as ConfigType)}
           className="btn-add-identity"
         >
           添加{label}
@@ -244,7 +298,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     );
   };
 
-  // 渲染嵌套的 Identity 数组字段
+  // 渲染嵌套字段的 Identity 数组选择器
   const renderNestedIdentityArrayField = (parent: string, field: string, value: Identity[], label: string) => {
     const configType = identityArrayFields[field]?.type;
     if (!configType) return null;
@@ -261,14 +315,14 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
                 onClick={() => handleRemoveNestedIdentity(parent, field, identity.ID)}
                 className="btn-remove-identity"
               >
-                ×
+                x
               </button>
             </div>
           ))}
         </div>
         <button
           type="button"
-          onClick={() => setSelectedField(`${parent}.${field}`)}
+          onClick={() => handleShowNestedIdentitySelector(parent, field, configType as ConfigType)}
           className="btn-add-identity"
         >
           添加{label}
@@ -286,14 +340,53 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       return renderIdentityArrayField(field, value, label);
     }
 
-    if (field === 'ID' || field === 'Name') {
+    // 处理单个 Identity 类型字段（例如 TargetLogID, AgentID 等）
+    if (field in identityArrayFields && !Array.isArray(value)) {
+      const configType = identityArrayFields[field].type;
+      // 是否已选择值
+      const hasValue = value && typeof value === 'object' && 'ID' in value;
+      
       return (
-      <div className="form-group" key={field}>
-        <label>{label}</label>
-        <div className="form-control-static"> 
-          {value || '-'}
+        <div className="form-group" key={field}>
+          <label>{label}</label>
+          <div className="form-control-identity">
+            {hasValue ? (
+              <div className="selected-identities">
+                <div className="selected-identity">
+                  <span>{value.Name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleChange(field, null)}
+                    className="btn-remove-identity"
+                  >
+                    x
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            
+            <button
+              type="button"
+              onClick={() => handleShowIdentitySelector(field, configType)}
+              className="btn-add-identity"
+            >
+              {hasValue ? `更改${label}` : `选择${label}`}
+            </button>
+          </div>
+          
+          {selectedField === field && renderIdentitySelector(field, configType)}
         </div>
-      </div>
+      );
+    }
+
+    if (field === 'ID' || (field === 'Name' && config.ID) || (field === 'Identity' && config.ID)) {
+      return (
+        <div className="form-group" key={field}>
+          <label>{label}</label>
+          <div className="form-control-static">
+            {value || '-'}
+          </div>
+        </div>
       );
     }
 
@@ -410,6 +503,22 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
               />
             </div>
           ))}
+        </div>
+      );
+    }
+
+    // 处理常规的输入字段
+    if (field === 'Name') {
+      return (
+        <div className="form-group" key={field}>
+          <label>{label} <span className="required">*</span></label>
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => handleChange(field, e.target.value)}
+            className={`form-control ${formErrors.Name ? 'error' : ''}`}
+          />
+          {formErrors.Name && <div className="error-message">{formErrors.Name}</div>}
         </div>
       );
     }

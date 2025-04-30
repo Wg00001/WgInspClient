@@ -54,6 +54,10 @@ const InspectorConfigTable: React.FC<InspectorConfigTableProps> = ({ data, onEdi
             onExpand={() => setRowStates(s => ({ ...s, [node.ID]: { ...state, expanded: true } }))}
             onCollapse={() => setRowStates(s => ({ ...s, [node.ID]: { ...state, expanded: false } }))}
             onCreate={onCreate}
+            tdClassName={{
+              SQL: 'cell-wrap-content',
+              Condition: 'cell-wrap-content'
+            }}
           />
         ),
         hasChildren && state.expanded
@@ -72,7 +76,7 @@ const InspectorConfigTable: React.FC<InspectorConfigTableProps> = ({ data, onEdi
           <th>SQL</th>
           <th>告警条件</th>
           <th>编辑</th>
-          <th>删除</th>
+          <th>创建</th>
         </tr>
       </thead>
       <tbody>{renderRows(data)}</tbody>

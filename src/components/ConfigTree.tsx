@@ -44,6 +44,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [runningTasks, setRunningTasks] = useState<Set<string>>(new Set());
   const [creatingChildParent, setCreatingChildParent] = useState<InspectorConfig | null>(null);
+  const [showNavigationConfirm, setShowNavigationConfirm] = useState<boolean>(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{menuId?: string, action?: () => void} | null>(null);
 
   // 处理错误消息的函数
   const handleErrorMessage = (message: string) => {
@@ -119,89 +121,19 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       }
     };
 
-    const handleConfigUpdate = (message: ResponseMsg) => {
-      console.log('ConfigTree接收到配置更新:', message);
+    // 我们不再使用全局的配置更新/创建/删除监听器
+    // 所有这些操作都通过各自的处理函数和一次性监听器来处理
 
-      if (!message.config_data) {
-        console.log('configData为空，跳过更新');
-        return;
-      }
-      if (!message.config_type) {
-        console.log('config_type为空，跳过更新');
-        return;
-      }
-
-      const newConfigData = { ...configData };
-      console.log('更新前的配置数据:', newConfigData);
-      
-      // 根据配置类型更新数据
-      switch (message.config_type) {
-        case 'db_config':
-          newConfigData.DBs = message.config_data;
-          break;
-        case 'log_config':
-          newConfigData.Logs = message.config_data;
-          break;
-        case 'alert_config':
-          newConfigData.Alerts = message.config_data;
-          break;
-        case 'task_config':
-          console.log('更新任务配置数据:', message.config_data);
-          newConfigData.Tasks = message.config_data;
-          break;
-        case 'agent_config':
-          if (message.config_data.length === 1) {
-            newConfigData.Agents = message.config_data;
-          }
-          break;
-        case 'agent_task_config':
-          newConfigData.AgentTasks = message.config_data;
-          break;
-        case 'kbase_config':
-          newConfigData.KBases = message.config_data;
-          break;
-        case 'inspector_config':
-          newConfigData.InspNodes = message.config_data;
-          break;
-      }
-
-      console.log('更新后的配置数据:', newConfigData);
-      console.log('当前选中的菜单:', selectedMenu);
-      setConfigData(newConfigData);
-    };
-
-    // 订阅配置元数据 - 首先确保已经订阅
+    // 订阅配置元数据
     console.log('正在订阅config_get消息...');
     wsClient.subscribe('config_get', (message: ResponseMsg) => {
       console.log('ConfigTree收到config_get消息:', message);
       if (message.success === false) {
         handleErrorMessage(message.message || '配置获取失败');
-        setIsLoading(false); // 确保即使失败也设置加载状态为false
+        setIsLoading(false);
         return;
       }
-      // 直接使用消息中的字段
       handleConfigMeta(message);
-    });
-
-    // 订阅配置更新消息
-    wsClient.subscribe('config_update', (message: ResponseMsg) => {
-      console.log('ConfigTree收到config_update消息:', message);
-      if (message.success === false) {
-        handleErrorMessage(message.message || '配置更新失败');
-        return;
-      }
-      // 直接使用消息中的字段
-      handleConfigUpdate(message);
-    });
-
-    // 订阅配置创建消息
-    wsClient.subscribe('config_create', (message: ResponseMsg) => {
-      console.log('ConfigTree收到config_create消息:', message);
-      if (message.success === false) {
-        handleErrorMessage(message.message || '配置创建失败');
-        return;
-      }
-      handleConfigUpdate(message);
     });
 
     // 确保已订阅后再发送请求
@@ -216,32 +148,262 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       wsClient.unsubscribe('config_get');
       wsClient.unsubscribe('config_update');
       wsClient.unsubscribe('config_create');
+      wsClient.unsubscribe('config_delete');
     };
   }, []);
 
   const handleConfigEdit = (type: ConfigType, updatedConfig: any) => {
     console.log('Saving config update:', { type, config: updatedConfig });
-    wsClient.sendUpdate(type, updatedConfig);
+    
+    // 设置一个一次性的监听器来处理更新响应
+    const handleUpdateResponse = (message: ResponseMsg) => {
+      console.log('收到更新响应:', message);
+      if (message.action === 'config_update' && message.config_type === type && message.success) {
+        // 只更新特定类型的数据
+        const newConfigData = { ...configData };
+        
+        switch (type) {
+          case 'db_config':
+            newConfigData.DBs = message.config_data;
+            break;
+          case 'log_config':
+            newConfigData.Logs = message.config_data;
+            break;
+          case 'alert_config':
+            newConfigData.Alerts = message.config_data;
+            break;
+          case 'task_config':
+            newConfigData.Tasks = message.config_data;
+            break;
+          case 'agent_config':
+            newConfigData.Agents = message.config_data;
+            break;
+          case 'agent_task_config':
+            newConfigData.AgentTasks = message.config_data;
+            break;
+          case 'kbase_config':
+            newConfigData.KBases = message.config_data;
+            break;
+          case 'inspector_config':
+            newConfigData.InspNodes = message.config_data;
+            break;
+        }
+        
+        setConfigData(newConfigData);
+        
+        // 移除监听器
+        wsClient.unsubscribe('config_update_response');
+      } else if (message.action === 'config_update' && !message.success) {
+        // 处理更新失败
+        handleErrorMessage(message.message || '更新失败');
+        wsClient.unsubscribe('config_update_response');
+      }
+    };
+    
+    // 添加一次性的监听器
+    wsClient.subscribe('config_update', handleUpdateResponse);
+    
+    // 发送更新请求
+    wsClient.send({
+      action: 'config_update',
+      config_type: type,
+      config_data: updatedConfig
+    });
   };
 
   const handleConfigDelete = (type: ConfigType, identity: number) => {
     console.log('Deleting config:', { type, identity });
-    wsClient.sendDelete(type, { id: identity });
+    
+    // 设置一个一次性的监听器来处理删除响应
+    const handleDeleteResponse = (message: ResponseMsg) => {
+      console.log('收到删除响应:', message);
+      if (message.action === 'config_delete' && message.config_type === type && message.success) {
+        // 只更新特定类型的数据
+        const newConfigData = { ...configData };
+        
+        switch (type) {
+          case 'db_config':
+            newConfigData.DBs = message.config_data;
+            break;
+          case 'log_config':
+            newConfigData.Logs = message.config_data;
+            break;
+          case 'alert_config':
+            newConfigData.Alerts = message.config_data;
+            break;
+          case 'task_config':
+            newConfigData.Tasks = message.config_data;
+            break;
+          case 'agent_config':
+            newConfigData.Agents = message.config_data;
+            break;
+          case 'agent_task_config':
+            newConfigData.AgentTasks = message.config_data;
+            break;
+          case 'kbase_config':
+            newConfigData.KBases = message.config_data;
+            break;
+          case 'inspector_config':
+            newConfigData.InspNodes = message.config_data;
+            break;
+        }
+        
+        setConfigData(newConfigData);
+        
+        // 移除监听器
+        wsClient.unsubscribe('config_delete');
+      } else if (message.action === 'config_delete' && !message.success) {
+        // 处理删除失败
+        handleErrorMessage(message.message || '删除失败');
+        wsClient.unsubscribe('config_delete');
+      }
+    };
+    
+    // 添加一次性的监听器
+    wsClient.subscribe('config_delete', handleDeleteResponse);
+    
+    // 发送删除请求
+    wsClient.send({
+      action: 'config_delete',
+      config_type: type,
+      config_data: { id: identity }
+    });
   };
 
+  // 菜单项切换处理
+  const handleMenuSelect = (menuId: string) => {
+    // 如果当前处于编辑或创建状态，显示确认对话框
+    if (isCreating || creatingChildParent) {
+      setShowNavigationConfirm(true);
+      setPendingNavigation({ menuId });
+    } else {
+      // 否则直接切换
+      setSelectedMenu(menuId);
+    }
+  };
+
+  // 确认放弃编辑并导航
+  const confirmNavigation = () => {
+    if (pendingNavigation) {
+      if (pendingNavigation.menuId) {
+        setSelectedMenu(pendingNavigation.menuId);
+      }
+      if (pendingNavigation.action) {
+        pendingNavigation.action();
+      }
+    }
+    
+    // 重置状态
+    setIsCreating(false);
+    setCreatingType(null);
+    setCreatingChildParent(null);
+    setShowNavigationConfirm(false);
+    setPendingNavigation(null);
+  };
+
+  // 取消导航，保持在当前编辑状态
+  const cancelNavigation = () => {
+    setShowNavigationConfirm(false);
+    setPendingNavigation(null);
+  };
+
+  // 保存并导航
+  const saveAndNavigate = () => {
+    // 获取当前表单引用
+    const formElement = document.querySelector('.config-edit-form') as HTMLFormElement;
+    if (formElement) {
+      // 找到保存按钮并触发点击
+      const saveButton = formElement.querySelector('.btn-save') as HTMLButtonElement;
+      if (saveButton) {
+        saveButton.click();
+        // 保存后进行导航
+        setTimeout(() => {
+          confirmNavigation();
+        }, 100);
+        return;
+      }
+    }
+    
+    // 如果没有找到表单或按钮，直接导航
+    confirmNavigation();
+  };
 
   const handleCreate = (type: ConfigType) => {
-    setIsCreating(true);
-    setCreatingType(type);
+    // 如果当前正在编辑或创建其他内容，需要确认
+    if (isCreating || creatingChildParent) {
+      setShowNavigationConfirm(true);
+      setPendingNavigation({ 
+        action: () => {
+          setIsCreating(true);
+          setCreatingType(type);
+        }
+      });
+    } else {
+      setIsCreating(true);
+      setCreatingType(type);
+    }
   };
 
   const handleConfigCreate = (newConfig: any) => {
     if (creatingType) {
       console.log('创建新配置:', { type: creatingType, config: newConfig });
-      // 先发送创建请求
-      wsClient.sendCreate(creatingType, newConfig);
+      
+      // 设置一个一次性的监听器来处理创建响应
+      const handleCreateResponse = (message: ResponseMsg) => {
+        console.log('收到创建响应:', message);
+        if (message.action === 'config_create' && message.config_type === creatingType && message.success) {
+          // 只更新特定类型的数据
+          const newConfigData = { ...configData };
+          
+          switch (creatingType) {
+            case 'db_config':
+              newConfigData.DBs = message.config_data;
+              break;
+            case 'log_config':
+              newConfigData.Logs = message.config_data;
+              break;
+            case 'alert_config':
+              newConfigData.Alerts = message.config_data;
+              break;
+            case 'task_config':
+              newConfigData.Tasks = message.config_data;
+              break;
+            case 'agent_config':
+              newConfigData.Agents = message.config_data;
+              break;
+            case 'agent_task_config':
+              newConfigData.AgentTasks = message.config_data;
+              break;
+            case 'kbase_config':
+              newConfigData.KBases = message.config_data;
+              break;
+            case 'inspector_config':
+              newConfigData.InspNodes = message.config_data;
+              break;
+          }
+          
+          setConfigData(newConfigData);
+          
+          // 移除监听器
+          wsClient.unsubscribe('config_create');
+        } else if (message.action === 'config_create' && !message.success) {
+          // 处理创建失败
+          handleErrorMessage(message.message || '创建失败');
+          wsClient.unsubscribe('config_create');
+        }
+      };
+      
+      // 添加一次性的监听器
+      wsClient.subscribe('config_create', handleCreateResponse);
+      
+      // 发送创建请求
+      wsClient.send({
+        action: 'config_create',
+        config_type: creatingType,
+        config_data: newConfig
+      });
+      
       setIsCreating(false);
-      // setCreatingType(creatingType);
     }
   };
 
@@ -417,7 +579,34 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                   config={{ Name: '', SQL: '', AlertWhen: '', Parent: { ID: creatingChildParent.ID, Name: creatingChildParent.Name } }}
                   onCancel={() => setCreatingChildParent(null)}
                   onSave={(newConfig) => {
-                    wsClient.sendCreate('inspector_config', newConfig);
+                    // 设置一个一次性的监听器来处理创建响应
+                    const handleCreateResponse = (message: ResponseMsg) => {
+                      console.log('收到创建子配置响应:', message);
+                      if (message.action === 'config_create' && message.config_type === 'inspector_config' && message.success) {
+                        // 只更新 InspNodes 字段
+                        const newConfigData = { ...configData };
+                        newConfigData.InspNodes = message.config_data;
+                        setConfigData(newConfigData);
+                        
+                        // 移除监听器
+                        wsClient.unsubscribe('config_create');
+                      } else if (message.action === 'config_create' && !message.success) {
+                        // 处理创建失败
+                        handleErrorMessage(message.message || '创建子配置失败');
+                        wsClient.unsubscribe('config_create');
+                      }
+                    };
+                    
+                    // 添加一次性的监听器
+                    wsClient.subscribe('config_create', handleCreateResponse);
+                    
+                    // 发送创建请求
+                    wsClient.send({
+                      action: 'config_create',
+                      config_type: 'inspector_config',
+                      config_data: newConfig
+                    });
+                    
                     setCreatingChildParent(null);
                   }}
                   type="inspector_config"
@@ -468,7 +657,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             Monthly: null
           },
           AllInspector: false,
-          TargetLogID: { ID: 0, Name: '' },
+          TargetLogID: {},
           TargetDB: [],
           Todo: [],
           NotTodo: null
@@ -551,6 +740,20 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         </div>
       )}
       
+      {showNavigationConfirm && (
+        <div className="navigation-confirm-modal" style={{ zIndex: 1200 }}>
+          <div className="modal-content">
+            <h3>未保存的更改</h3>
+            <p>您有未保存的更改，是否要保存这些更改？</p>
+            <div className="modal-actions">
+              <button onClick={cancelNavigation} className="btn-cancel">取消</button>
+              <button onClick={confirmNavigation} className="btn-discard">不保存</button>
+              <button onClick={saveAndNavigate} className="btn-save">保存</button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="config-sidebar">
         <div className="sidebar-header">
           <h2>配置管理</h2>
@@ -560,7 +763,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             <div
               key={item.id}
               className={`menu-item ${selectedMenu === item.id ? 'selected' : ''}`}
-              onClick={() => setSelectedMenu(item.id)}
+              onClick={() => handleMenuSelect(item.id)}
             >
               <span className="menu-item-name">{item.name}</span>
             </div>

@@ -324,6 +324,7 @@
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
+  min-width: 56px;
 }
 .inspector-config-table .btn-edit:hover {
   background-color: #40a9ff;
@@ -337,6 +338,7 @@
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
+  min-width: 56px;
 }
 .inspector-config-table .btn-delete:disabled {
   background: #f5f5f5;
@@ -345,6 +347,38 @@
 }
 .inspector-config-table .btn-delete:hover:not(:disabled) {
   background-color: #ff7875;
+}
+
+.inspector-config-table .btn-details {
+  background-color: white;
+  color: #1890ff;
+  border: 1px solid #1890ff;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 56px;
+}
+
+.inspector-config-table .btn-details:hover {
+  background-color: #e6f7ff;
+}
+
+.inspector-config-table .btn-create {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-width: 56px;
+}
+
+.inspector-config-table .btn-create:hover {
+  background-color: #73d13d;
 }
 
 .cell-ellipsis {
@@ -431,4 +465,11 @@ textarea:focus {
 .inspector-config-table td .btn-edit,
 .inspector-config-table td .btn-details {
   margin-right: 6px;
+}
+
+.cell-wrap-content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 300px;
+  min-width: 200px;
 }
