@@ -13,6 +13,7 @@ interface InspectorConfigRowProps {
   onExpand?: () => void;
   onCollapse?: () => void;
   tdClassName?: Record<string, string>;
+  level?: number;
 }
 
 const MAX_CELL_LENGTH = 40;
@@ -33,7 +34,8 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
   expanded = false,
   onExpand,
   onCollapse,
-  tdClassName
+  tdClassName,
+  level = 0
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editSQL, setEditSQL] = useState(config.SQL);
@@ -80,9 +82,28 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
   const handleShowDetail = () => setShowDetail(true);
   const handleCloseDetail = () => setShowDetail(false);
 
+  // 为子节点创建缩进指示
+  const renderIndent = () => {
+    if (level === 0) return null;
+    
+    const indents = [];
+    for (let i = 0; i < level; i++) {
+      indents.push(<span key={i} className="child-node-line"></span>);
+    }
+    
+    return (
+      <span className="child-node-indent">
+        {indents}
+        <span className="child-node-indicator">
+          {level === 1 ? "↳" : level === 2 ? "⤷" : "⟹"}
+        </span>
+      </span>
+    );
+  };
+
   return (
     <>
-      <tr>
+      <tr className={level > 0 ? `child-node-row child-node-level-${Math.min(level, 3)}` : ""}>
         <td style={{ textAlign: 'center', width: 40 }}>
           {hasChildren ? (
             <button
@@ -95,7 +116,10 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
             </button>
           ) : null}
         </td>
-        <td className="cell-ellipsis">{ellipsis(config.Name, 20)}</td>
+        <td className="cell-ellipsis">
+          {renderIndent()}
+          {ellipsis(config.Name, 20)}
+        </td>
         <td className={tdClassName?.SQL || "cell-ellipsis"}>{ellipsis(config.SQL)}</td>
         <td className={tdClassName?.Condition || "cell-ellipsis"}>{ellipsis(config.AlertWhen || '无')}</td>
         <td style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -147,6 +171,12 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
               <div className="modal-content" style={{ minWidth: 400 }}>
                 <h3>巡检配置详情</h3>
                 <div className="form-group"><label>名称</label><div>{config.Name}</div></div>
+                {level > 0 && config.Parent && (
+                  <div className="form-group">
+                    <label>父节点</label>
+                    <div className="parent-node-info">{config.Parent.Name}</div>
+                  </div>
+                )}
                 <div className="form-group"><label>SQL</label><div className="cell-wrap-content">{config.SQL}</div></div>
                 <div className="form-group"><label>告警条件</label><div className="cell-wrap-content">{config.AlertWhen || '无'}</div></div>
                 <div className="form-group"><label>子节点数量</label><div>{config.Children ? config.Children.length : 0}</div></div>

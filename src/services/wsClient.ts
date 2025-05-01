@@ -305,11 +305,32 @@ export class WSClient {
       }
 
       if (message.action === 'config_update' || message.action === 'config_create' || message.action === 'config_delete') {
-        console.log('检测到config_update消息:', message);
-        const handlers = this.listeners.get('config_update');
-        if (handlers) {
-          handlers.forEach(handler => handler(message));
+        console.log('检测到config_update/create/delete消息:', message);
+        
+        // 处理config_update消息
+        const updateHandlers = this.listeners.get('config_update');
+        if (updateHandlers) {
+          updateHandlers.forEach(handler => handler(message));
         }
+        
+        // 处理config_create消息
+        if (message.action === 'config_create') {
+          const createHandlers = this.listeners.get('config_create');
+          if (createHandlers) {
+            console.log('找到config_create订阅处理程序，正在调用...');
+            createHandlers.forEach(handler => handler(message));
+          }
+        }
+        
+        // 处理config_delete消息
+        if (message.action === 'config_delete') {
+          const deleteHandlers = this.listeners.get('config_delete');
+          if (deleteHandlers) {
+            console.log('找到config_delete订阅处理程序，正在调用...');
+            deleteHandlers.forEach(handler => handler(message));
+          }
+        }
+        
         return;
       }
 

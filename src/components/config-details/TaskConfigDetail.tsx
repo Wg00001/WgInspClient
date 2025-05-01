@@ -63,8 +63,8 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
   };
 
   // Helper to display single Identity name or '无'
-  const displayIdentityName = (identity: { Name: string } | undefined | null) => {
-    return identity ? identity.Name : '-'; // Use '-' for consistency
+  const display = (identity: string) => {
+    return identity ? identity : '-'; // Use '-' for consistency
   };
 
   // Helper to display array of strings or '无'
@@ -84,39 +84,18 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
         </div>
       </div>
       <div className="config-detail-content">
-        {/* TaskConfig does not have a Driver according to types/config.ts */}
-        {/* <div className="config-detail-item">
-          <span className="config-detail-label">驱动</span>
-          <span className="config-detail-value">{displayValue(config.Driver)}</span>
-        </div> */}
         <div className="config-detail-item">
           <span className="config-detail-label">日志ID</span>
-          <span className="config-detail-value">{displayIdentityName(config.TargetLogID)}</span>
+          <span className="config-detail-value">{display(config.LogID.Name)}</span>
         </div>
         <div className="config-detail-item">
           <span className="config-detail-label">定时表达式</span>
-          <span className="config-detail-value">{displayValue(config.Cron.CronTab)}</span>
+          <span className="config-detail-value">{display(config.Cron)}</span>
         </div>
 
         {showDetails && (
           <div className="config-details-section">
             <h4>详细配置</h4>
-            <div className="config-detail-item">
-              <span className="config-detail-label">持续时间(纳秒)</span>
-              <span className="config-detail-value">{config.Cron.Duration}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">执行时间</span>
-              <span className="config-detail-value">{displayStringArray(config.Cron.AtTime)}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">每周执行</span>
-              <span className="config-detail-value">{displayStringArray(config.Cron.Weekly?.map(String))}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">每月执行</span>
-              <span className="config-detail-value">{displayStringArray(config.Cron.Monthly?.map(String))}</span>
-            </div>
             <div className="config-detail-item">
               <span className="config-detail-label">目标数据库</span>
               <span className="config-detail-value">{displayIdentityArray(config.TargetDB)}</span>

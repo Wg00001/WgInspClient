@@ -29,18 +29,11 @@ export interface AlertConfig extends Identity {
   Option: Record<string, string>;
 }
 
-export interface Cron {
-  CronTab: string;
-  Duration: number; // 这里需要注意：服务端是 time.Duration，我们用 number 表示纳秒数
-  AtTime: string[] | null;
-  Weekly: number[] | null; // time.Weekday 值 (0-6)
-  Monthly: number[] | null;
-}
 
 export interface TaskConfig extends Identity {
-  Cron: Cron;
+  Cron: string;
   AllInspector: boolean;
-  TargetLogID: Identity;
+  LogID: Identity;
   TargetDB: Identity[];
   Todo: Identity[];
   NotTodo: Identity[] | null;
@@ -65,7 +58,7 @@ export interface LogFilter {
 }
 
 export interface AgentTaskConfig extends Identity {
-  Cron: Cron;
+  Cron: string;
   LogID: Identity;
   LogFilter: LogFilter;
   AgentID: Identity;
@@ -85,6 +78,7 @@ export interface InspectorConfig extends Identity{
   SQL: string;
   AlertWhen?: string;
   Children?: InspectorConfig[];
+  Parent?: Identity;
 }
 
 export type ConfigType = 'db_config' | 'task_config' | 'log_config' | 'alert_config' | 'agent_config' | 'Common' | 'agent_task_config' | 'kbase_config' | 'inspector_config';

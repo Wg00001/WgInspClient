@@ -121,9 +121,6 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       }
     };
 
-    // 我们不再使用全局的配置更新/创建/删除监听器
-    // 所有这些操作都通过各自的处理函数和一次性监听器来处理
-
     // 订阅配置元数据
     console.log('正在订阅config_get消息...');
     wsClient.subscribe('config_get', (message: ResponseMsg) => {
@@ -135,6 +132,53 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       }
       handleConfigMeta(message);
     });
+
+    // 添加全局配置更新/创建/删除处理器
+    const handleConfigChange = (message: ResponseMsg) => {
+      console.log('收到全局配置变更消息:', message);
+      
+      if (message.success && message.config_data && message.config_type) {
+        // 只更新特定类型的数据
+        const newConfigData = { ...configData };
+        
+        switch (message.config_type) {
+          case 'db_config':
+            newConfigData.DBs = message.config_data;
+            break;
+          case 'log_config':
+            newConfigData.Logs = message.config_data;
+            break;
+          case 'alert_config':
+            newConfigData.Alerts = message.config_data;
+            break;
+          case 'task_config':
+            newConfigData.Tasks = message.config_data;
+            break;
+          case 'agent_config':
+            newConfigData.Agents = message.config_data;
+            break;
+          case 'agent_task_config':
+            newConfigData.AgentTasks = message.config_data;
+            break;
+          case 'kbase_config':
+            newConfigData.KBases = message.config_data;
+            break;
+          case 'inspector_config':
+            newConfigData.InspNodes = message.config_data;
+            break;
+        }
+        
+        setConfigData(newConfigData);
+      } else if (!message.success) {
+        // 处理失败
+        handleErrorMessage(message.message || `${message.action}操作失败`);
+      }
+    };
+
+    // 订阅配置变更
+    wsClient.subscribe('config_update', handleConfigChange);
+    wsClient.subscribe('config_create', handleConfigChange);
+    wsClient.subscribe('config_delete', handleConfigChange);
 
     // 确保已订阅后再发送请求
     setTimeout(() => {
@@ -155,55 +199,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const handleConfigEdit = (type: ConfigType, updatedConfig: any) => {
     console.log('Saving config update:', { type, config: updatedConfig });
     
-    // 设置一个一次性的监听器来处理更新响应
-    const handleUpdateResponse = (message: ResponseMsg) => {
-      console.log('收到更新响应:', message);
-      if (message.action === 'config_update' && message.config_type === type && message.success) {
-        // 只更新特定类型的数据
-        const newConfigData = { ...configData };
-        
-        switch (type) {
-          case 'db_config':
-            newConfigData.DBs = message.config_data;
-            break;
-          case 'log_config':
-            newConfigData.Logs = message.config_data;
-            break;
-          case 'alert_config':
-            newConfigData.Alerts = message.config_data;
-            break;
-          case 'task_config':
-            newConfigData.Tasks = message.config_data;
-            break;
-          case 'agent_config':
-            newConfigData.Agents = message.config_data;
-            break;
-          case 'agent_task_config':
-            newConfigData.AgentTasks = message.config_data;
-            break;
-          case 'kbase_config':
-            newConfigData.KBases = message.config_data;
-            break;
-          case 'inspector_config':
-            newConfigData.InspNodes = message.config_data;
-            break;
-        }
-        
-        setConfigData(newConfigData);
-        
-        // 移除监听器
-        wsClient.unsubscribe('config_update_response');
-      } else if (message.action === 'config_update' && !message.success) {
-        // 处理更新失败
-        handleErrorMessage(message.message || '更新失败');
-        wsClient.unsubscribe('config_update_response');
-      }
-    };
-    
-    // 添加一次性的监听器
-    wsClient.subscribe('config_update', handleUpdateResponse);
-    
-    // 发送更新请求
+    // 发送更新请求 - 依赖全局监听器处理响应
     wsClient.send({
       action: 'config_update',
       config_type: type,
@@ -214,55 +210,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const handleConfigDelete = (type: ConfigType, identity: number) => {
     console.log('Deleting config:', { type, identity });
     
-    // 设置一个一次性的监听器来处理删除响应
-    const handleDeleteResponse = (message: ResponseMsg) => {
-      console.log('收到删除响应:', message);
-      if (message.action === 'config_delete' && message.config_type === type && message.success) {
-        // 只更新特定类型的数据
-        const newConfigData = { ...configData };
-        
-        switch (type) {
-          case 'db_config':
-            newConfigData.DBs = message.config_data;
-            break;
-          case 'log_config':
-            newConfigData.Logs = message.config_data;
-            break;
-          case 'alert_config':
-            newConfigData.Alerts = message.config_data;
-            break;
-          case 'task_config':
-            newConfigData.Tasks = message.config_data;
-            break;
-          case 'agent_config':
-            newConfigData.Agents = message.config_data;
-            break;
-          case 'agent_task_config':
-            newConfigData.AgentTasks = message.config_data;
-            break;
-          case 'kbase_config':
-            newConfigData.KBases = message.config_data;
-            break;
-          case 'inspector_config':
-            newConfigData.InspNodes = message.config_data;
-            break;
-        }
-        
-        setConfigData(newConfigData);
-        
-        // 移除监听器
-        wsClient.unsubscribe('config_delete');
-      } else if (message.action === 'config_delete' && !message.success) {
-        // 处理删除失败
-        handleErrorMessage(message.message || '删除失败');
-        wsClient.unsubscribe('config_delete');
-      }
-    };
-    
-    // 添加一次性的监听器
-    wsClient.subscribe('config_delete', handleDeleteResponse);
-    
-    // 发送删除请求
+    // 发送删除请求 - 依赖全局监听器处理响应
     wsClient.send({
       action: 'config_delete',
       config_type: type,
@@ -348,55 +296,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     if (creatingType) {
       console.log('创建新配置:', { type: creatingType, config: newConfig });
       
-      // 设置一个一次性的监听器来处理创建响应
-      const handleCreateResponse = (message: ResponseMsg) => {
-        console.log('收到创建响应:', message);
-        if (message.action === 'config_create' && message.config_type === creatingType && message.success) {
-          // 只更新特定类型的数据
-          const newConfigData = { ...configData };
-          
-          switch (creatingType) {
-            case 'db_config':
-              newConfigData.DBs = message.config_data;
-              break;
-            case 'log_config':
-              newConfigData.Logs = message.config_data;
-              break;
-            case 'alert_config':
-              newConfigData.Alerts = message.config_data;
-              break;
-            case 'task_config':
-              newConfigData.Tasks = message.config_data;
-              break;
-            case 'agent_config':
-              newConfigData.Agents = message.config_data;
-              break;
-            case 'agent_task_config':
-              newConfigData.AgentTasks = message.config_data;
-              break;
-            case 'kbase_config':
-              newConfigData.KBases = message.config_data;
-              break;
-            case 'inspector_config':
-              newConfigData.InspNodes = message.config_data;
-              break;
-          }
-          
-          setConfigData(newConfigData);
-          
-          // 移除监听器
-          wsClient.unsubscribe('config_create');
-        } else if (message.action === 'config_create' && !message.success) {
-          // 处理创建失败
-          handleErrorMessage(message.message || '创建失败');
-          wsClient.unsubscribe('config_create');
-        }
-      };
-      
-      // 添加一次性的监听器
-      wsClient.subscribe('config_create', handleCreateResponse);
-      
-      // 发送创建请求
+      // 发送创建请求 - 不再需要创建一次性监听器，因为已有全局监听器
       wsClient.send({
         action: 'config_create',
         config_type: creatingType,
@@ -579,28 +479,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
                   config={{ Name: '', SQL: '', AlertWhen: '', Parent: { ID: creatingChildParent.ID, Name: creatingChildParent.Name } }}
                   onCancel={() => setCreatingChildParent(null)}
                   onSave={(newConfig) => {
-                    // 设置一个一次性的监听器来处理创建响应
-                    const handleCreateResponse = (message: ResponseMsg) => {
-                      console.log('收到创建子配置响应:', message);
-                      if (message.action === 'config_create' && message.config_type === 'inspector_config' && message.success) {
-                        // 只更新 InspNodes 字段
-                        const newConfigData = { ...configData };
-                        newConfigData.InspNodes = message.config_data;
-                        setConfigData(newConfigData);
-                        
-                        // 移除监听器
-                        wsClient.unsubscribe('config_create');
-                      } else if (message.action === 'config_create' && !message.success) {
-                        // 处理创建失败
-                        handleErrorMessage(message.message || '创建子配置失败');
-                        wsClient.unsubscribe('config_create');
-                      }
-                    };
-                    
-                    // 添加一次性的监听器
-                    wsClient.subscribe('config_create', handleCreateResponse);
-                    
-                    // 发送创建请求
+                    // 发送创建请求 - 依赖全局监听器处理响应
                     wsClient.send({
                       action: 'config_create',
                       config_type: 'inspector_config',
@@ -649,13 +528,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       case 'task_config':
         return {
           Name: '',
-          Cron: {
-            CronTab: '',
-            Duration: 0,
-            AtTime: null,
-            Weekly: null,
-            Monthly: null
-          },
+          Cron: '',
           AllInspector: false,
           TargetLogID: {},
           TargetDB: [],
@@ -676,11 +549,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Name: '',
           Cron: {
-            CronTab: '',
-            Duration: 0,
-            AtTime: null,
-            Weekly: null,
-            Monthly: null
+            CronTab: ''
           },
           LogID: { ID: 0, Name: '' },
           LogFilter: {

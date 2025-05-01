@@ -103,25 +103,8 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
             <h4>Cron 配置</h4>
             <div className="config-detail-item">
               <span className="config-detail-label">定时表达式</span>
-              <span className="config-detail-value">{config.Cron.CronTab}</span>
+              <span className="config-detail-value">{config.Cron}</span>
             </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">持续时间(纳秒)</span>
-              <span className="config-detail-value">{config.Cron.Duration}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">执行时间</span>
-              <span className="config-detail-value">{displayStringArray(config.Cron.AtTime)}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">每周执行</span>
-              <span className="config-detail-value">{displayStringArray(config.Cron.Weekly?.map(String))}</span>
-            </div>
-            <div className="config-detail-item">
-              <span className="config-detail-label">每月执行</span>
-              <span className="config-detail-value">{displayStringArray(config.Cron.Monthly?.map(String))}</span>
-            </div>
-
             <h4>知识库配置</h4>
             <div className="config-detail-item">
               <span className="config-detail-label">知识库结果数</span>

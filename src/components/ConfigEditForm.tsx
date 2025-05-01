@@ -78,14 +78,6 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   };
 
   const handleChange = (field: string, value: any) => {
-    if (field === 'Cron' && typeof value === 'object' && 'Duration' in value) {
-      // 确保 Duration 是数字类型
-      const duration = parseInt(value.Duration, 10);
-      value = {
-        ...value,
-        Duration: isNaN(duration) ? 0 : duration
-      };
-    }
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -120,17 +112,12 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       return;
     }
     
-    // 在提交前确保 Cron.Duration 是数字
-    const processedData = { ...formData };
-    if (processedData.Cron?.Duration) {
-      processedData.Cron.Duration = parseInt(processedData.Cron.Duration, 10) || 0;
-    }
     // 验证 Identity 格式
-    if (processedData.Identity && !/^[a-z0-9-_]+$/.test(processedData.Identity)) {
+    if (formData.Identity && !/^[a-z0-9-_]+$/.test(formData.Identity)) {
       alert('Identity 只能包含小写字母、数字、连字符(-)和下划线(_)');
       return;
     }
-    onSave(processedData);
+    onSave(formData);
     // 直接关闭编辑模式，因为会很快收到 config_update 消息
     onCancel();
   };

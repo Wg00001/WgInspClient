@@ -473,3 +473,49 @@ textarea:focus {
   max-width: 300px;
   min-width: 200px;
 }
+
+/* 子节点指示器样式 */
+.child-node-indicator {
+  display: inline-block;
+  color: #1890ff;
+  font-weight: bold;
+  margin-right: 6px;
+  font-size: 16px;
+}
+
+.child-node-row {
+  background-color: #f0f7ff !important;
+  border-left: 3px solid #1890ff !important;
+}
+
+.child-node-indent {
+  display: inline-flex;
+  align-items: center;
+}
+
+.child-node-line {
+  display: inline-block;
+  border-left: 1px solid #bfbfbf;
+  height: 20px;
+  margin-right: 5px;
+  position: relative;
+  top: -1px;
+}
+
+/* 调整嵌套级别的表格行显示 */
+tr.child-node-row td:first-child {
+  padding-left: 8px;
+}
+
+/* 不同级别的子节点使用不同的颜色深度 */
+.child-node-level-1 {
+  background-color: #f0f7ff !important;
+}
+
+.child-node-level-2 {
+  background-color: #e6f3ff !important;
+}
+
+.child-node-level-3 {
+  background-color: #d9edff !important;
+}

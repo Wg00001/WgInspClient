@@ -28,8 +28,8 @@ const InspectorConfigTable: React.FC<InspectorConfigTableProps> = ({ data, onEdi
       const canEdit = true;
       return [
         state.editing ? (
-          <tr key={`edit-${node.ID}`}>
-            <td colSpan={6} style={{ paddingLeft: 40 * (level + 1) }}>
+          <tr key={`edit-${node.ID}`} className={level > 0 ? `child-node-row child-node-level-${Math.min(level, 3)}` : ""}>
+            <td colSpan={6} style={{ paddingLeft: level > 0 ? 40 * level : 0 }}>
               <ConfigEditForm
                 config={node}
                 onCancel={() => setRowStates(s => ({ ...s, [node.ID]: { ...state, editing: false } }))}
@@ -58,6 +58,7 @@ const InspectorConfigTable: React.FC<InspectorConfigTableProps> = ({ data, onEdi
               SQL: 'cell-wrap-content',
               Condition: 'cell-wrap-content'
             }}
+            level={level}
           />
         ),
         hasChildren && state.expanded
