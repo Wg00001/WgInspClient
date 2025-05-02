@@ -307,14 +307,25 @@ export class WSClient {
       if (message.action === 'config_update' || message.action === 'config_create' || message.action === 'config_delete') {
         console.log('检测到config_update/create/delete消息:', message);
         
+        // 首先处理特定配置类型的订阅
+        if (message.config_type) {
+          const typeHandlers = this.listeners.get(message.config_type);
+          if (typeHandlers) {
+            console.log(`找到${message.config_type}类型的订阅处理程序，正在调用...`);
+            typeHandlers.forEach(handler => handler(message));
+          }
+        }
+        
         // 处理config_update消息
-        const updateHandlers = this.listeners.get('config_update');
-        if (updateHandlers) {
-          updateHandlers.forEach(handler => handler(message));
+        if (message.action === 'config_update') {
+          const updateHandlers = this.listeners.get('config_update');
+          if (updateHandlers) {
+            updateHandlers.forEach(handler => handler(message));
+          }
         }
         
         // 处理config_create消息
-        if (message.action === 'config_create') {
+        else if (message.action === 'config_create') {
           const createHandlers = this.listeners.get('config_create');
           if (createHandlers) {
             console.log('找到config_create订阅处理程序，正在调用...');
@@ -323,7 +334,7 @@ export class WSClient {
         }
         
         // 处理config_delete消息
-        if (message.action === 'config_delete') {
+        else if (message.action === 'config_delete') {
           const deleteHandlers = this.listeners.get('config_delete');
           if (deleteHandlers) {
             console.log('找到config_delete订阅处理程序，正在调用...');
@@ -344,21 +355,34 @@ export class WSClient {
         return;
       }
 
-      // 处理其他消息类型
-      if (message.config_type) {
-        console.log('检测到类型消息:', message.config_type);
-        const handlers = this.listeners.get(message.config_type);
-        if (handlers) {
-          handlers.forEach(handler => handler(message.config_type));
-        }
-      }
-
+      // 处理task_listen消息
       if (message.action === 'task_listen') {
         console.log('检测到task_listen消息:', message);
         const handlers = this.listeners.get('task_listen');
         if (handlers) {
           handlers.forEach(handler => handler(message));
         }
+        return;
+      }
+
+      // 处理task_do消息
+      if (message.action === 'task_do') {
+        console.log('检测到task_do消息:', message);
+        const handlers = this.listeners.get('task_do');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
+        }
+        return;
+      }
+
+      // 处理task_cron_refresh消息
+      if (message.action === 'task_cron_refresh') {
+        console.log('检测到task_cron_refresh消息:', message);
+        const handlers = this.listeners.get('task_cron_refresh');
+        if (handlers) {
+          handlers.forEach(handler => handler(message));
+        }
+        return;
       }
 
       // 通用的action处理，如果前面的特定处理都没有匹配

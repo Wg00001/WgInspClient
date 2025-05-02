@@ -1,6 +1,7 @@
 .task-monitor-container {
   padding: 20px;
   height: 100%;
+  position: relative;
 }
 
 .task-monitor-header {
@@ -11,6 +12,107 @@
   margin: 0;
   color: #333;
   font-size: 24px;
+}
+
+/* 添加标题栏布局样式 */
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* 重启调度器按钮样式 */
+.refresh-cron-button {
+  margin-left: 15px;
+  padding: 6px 12px;
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.refresh-cron-button:hover:not(:disabled) {
+  background-color: #73d13d;
+}
+
+.refresh-cron-button:disabled {
+  background-color: #d9d9d9;
+  cursor: not-allowed;
+}
+
+.refresh-cron-button.refreshing {
+  background-color: #d9d9d9;
+  color: rgba(0, 0, 0, 0.25);
+}
+
+/* 确认对话框样式 */
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.confirm-dialog h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.confirm-dialog p {
+  margin-bottom: 20px;
+  color: #666;
+}
+
+.confirm-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.confirm-dialog-buttons button {
+  padding: 6px 16px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.confirm-dialog-buttons .cancel-button {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.confirm-dialog-buttons .cancel-button:hover {
+  background-color: #e8e8e8;
+}
+
+.confirm-dialog-buttons .confirm-button {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.confirm-dialog-buttons .confirm-button:hover {
+  background-color: #ff7875;
 }
 
 .task-list {
@@ -92,5 +194,19 @@
   .task-list td {
     padding: 8px;
     font-size: 14px;
+  }
+
+  .confirm-dialog {
+    width: 300px;
+    padding: 15px;
+  }
+
+  .confirm-dialog h3 {
+    font-size: 16px;
+  }
+
+  .confirm-dialog-buttons button {
+    padding: 5px 12px;
+    font-size: 12px;
   }
 } 
