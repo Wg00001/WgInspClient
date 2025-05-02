@@ -18,6 +18,174 @@
   color: #333;
 }
 
+/* Cron编辑器样式 */
+.cron-editor-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cron-input {
+  flex: 1;
+}
+
+.btn-cron-edit {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cron-edit:hover {
+  background-color: #73d13d;
+}
+
+.cron-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.cron-selector {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+  width: 800px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.cron-selector h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 18px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+
+.cron-selector h4 {
+  margin-top: 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.cron-preset-section {
+  margin-bottom: 20px;
+}
+
+.cron-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.cron-preset-button {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cron-preset-button:hover {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.cron-custom-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.cron-input-container {
+  margin-bottom: 15px;
+}
+
+.cron-manual-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.cron-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.cron-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.cron-field label {
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: #333;
+}
+
+.cron-field select {
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.cron-description {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 4px;
+}
+
+.cron-description p {
+  margin: 10px 0 0;
+  color: #52c41a;
+}
+
+.cron-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.btn-confirm {
+  padding: 8px 16px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-confirm:hover {
+  background-color: #40a9ff;
+}
+
 .option-list {
   display: flex;
   flex-direction: column;
@@ -248,15 +416,13 @@
   z-index: 1000;
   min-width: 300px;
   max-width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
 }
 
 .identity-selector h4 {
   margin-top: 0;
   margin-bottom: 15px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  font-size: 16px;
+  color: #333;
 }
 
 .identity-list {
@@ -272,15 +438,11 @@
 }
 
 .identity-option:hover {
-  background-color: #f5f5f5;
+  background-color: #e6f7ff;
 }
 
-/* 针对 Identity 单选和多选的通用样式 */
 .form-control-identity {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .form-control {
@@ -304,11 +466,10 @@
 
 .error-message {
   color: #ff4d4f;
-  font-size: 14px;
-  margin-top: 4px;
+  font-size: 12px;
+  margin-top: 5px;
 }
 
 .required {
   color: #ff4d4f;
-  margin-left: 4px;
 } 

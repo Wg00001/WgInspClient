@@ -3,6 +3,159 @@ import '../styles/ConfigEditForm.css';
 import { Identity, ConfigType } from '../types/config';
 import { wsClient } from '../services/wsClient';
 
+// Cron表达式选择器接口定义
+interface CronSelectorProps {
+  value: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+}
+
+// Cron表达式选择器组件
+const CronSelector: React.FC<CronSelectorProps> = ({ value, onChange, onClose }) => {
+  // 解析初始Cron表达式
+  const parseCronExpression = (cronExpression: string): string[] => {
+    // 默认值: 每分钟 (0 * * * * *)
+    const defaultValues = ['0', '*', '*', '*', '*', '*'];
+    
+    if (!cronExpression) return defaultValues;
+    
+    const parts = cronExpression.split(' ');
+    return parts.length === 6 ? parts : defaultValues;
+  };
+
+  const [cronParts, setCronParts] = useState<string[]>(parseCronExpression(value));
+  
+  // 字段名称和选项
+  const fields = [
+    { name: '秒', options: ['0', '*/5', '*/10', '*/15', '*/30', '*'] },
+    { name: '分', options: ['0', '*/5', '*/10', '*/15', '*/30', '*'] },
+    { name: '时', options: ['0', '*/1', '*/2', '*/4', '*/6', '*/12', '*'] },
+    { name: '日', options: ['1', '15', '*'] },
+    { name: '月', options: ['*', '1', '3', '6', '9', '12'] },
+    { name: '周', options: ['*', '1', '2', '3', '4', '5', '6', '0'] }
+  ];
+
+  // 字段中文描述映射
+  const fieldDescriptions = [
+    { name: '秒', map: { '0': '0秒', '*/5': '每5秒', '*/10': '每10秒', '*/15': '每15秒', '*/30': '每30秒', '*': '每秒' } },
+    { name: '分', map: { '0': '0分', '*/5': '每5分钟', '*/10': '每10分钟', '*/15': '每15分钟', '*/30': '每30分钟', '*': '每分钟' } },
+    { name: '时', map: { '0': '0点', '*/1': '每小时', '*/2': '每2小时', '*/4': '每4小时', '*/6': '每6小时', '*/12': '每12小时', '*': '每小时' } },
+    { name: '日', map: { '1': '1日', '15': '15日', '*': '每天' } },
+    { name: '月', map: { '*': '每月', '1': '1月', '3': '3月', '6': '6月', '9': '9月', '12': '12月' } },
+    { name: '周', map: { '*': '每天', '1': '周一', '2': '周二', '3': '周三', '4': '周四', '5': '周五', '6': '周六', '0': '周日' } }
+  ];
+
+  // 预设Cron表达式
+  const presets = [
+    { name: '每分钟', value: '0 * * * * *' },
+    { name: '每小时', value: '0 0 * * * *' },
+    { name: '每天午夜', value: '0 0 0 * * *' },
+    { name: '每周一早上', value: '0 0 9 * * 1' },
+    { name: '每月1号', value: '0 0 0 1 * *' }
+  ];
+
+  // 更新单个Cron字段
+  const updateCronPart = (index: number, value: string) => {
+    const newParts = [...cronParts];
+    newParts[index] = value;
+    setCronParts(newParts);
+    onChange(newParts.join(' '));
+  };
+
+  // 使用预设
+  const applyPreset = (presetValue: string) => {
+    setCronParts(parseCronExpression(presetValue));
+    onChange(presetValue);
+  };
+
+  // 获取当前表达式的描述
+  const getCronDescription = () => {
+    try {
+      return cronParts.map((part, index) => 
+        fieldDescriptions[index].map[part] || part
+      ).join(', ');
+    } catch (error) {
+      return '自定义表达式';
+    }
+  };
+
+  // 自定义输入表达式
+  const handleManualInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setCronParts(parseCronExpression(newValue));
+    onChange(newValue);
+  };
+
+  return (
+    <div className="cron-selector-overlay">
+      <div className="cron-selector">
+        <h3>定时表达式配置</h3>
+        
+        <div className="cron-preset-section">
+          <h4>常用表达式</h4>
+          <div className="cron-presets">
+            {presets.map((preset, index) => (
+              <button 
+                key={index}
+                type="button"
+                className="cron-preset-button"
+                onClick={() => applyPreset(preset.value)}
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="cron-custom-section">
+          <h4>自定义表达式</h4>
+          <div className="cron-input-container">
+            <input 
+              type="text"
+              value={cronParts.join(' ')}
+              onChange={handleManualInput}
+              className="cron-manual-input"
+              placeholder="秒 分 时 日 月 周"
+            />
+          </div>
+          
+          <div className="cron-fields">
+            {fields.map((field, index) => (
+              <div key={index} className="cron-field">
+                <label>{field.name}</label>
+                <select 
+                  value={cronParts[index]} 
+                  onChange={(e) => updateCronPart(index, e.target.value)}
+                >
+                  {field.options.map(option => (
+                    <option key={option} value={option}>
+                      {fieldDescriptions[index].map[option] || option}
+                    </option>
+                  ))}
+                  {!field.options.includes(cronParts[index]) && (
+                    <option value={cronParts[index]}>自定义: {cronParts[index]}</option>
+                  )}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="cron-description">
+          当前表达式: <strong>{cronParts.join(' ')}</strong>
+          <p>{getCronDescription()}</p>
+        </div>
+
+        <div className="cron-actions">
+          <button type="button" onClick={onClose} className="btn-confirm">
+            确定
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface ConfigEditFormProps {
   config: any;
   onCancel: () => void;
@@ -38,6 +191,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   const [identityOptions, setIdentityOptions] = useState<Record<string, Identity[]>>({});
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [showCronSelector, setShowCronSelector] = useState(false);
   
   useEffect(() => {
     // 监听服务端响应
@@ -321,7 +475,45 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     );
   };
 
+  // 渲染Cron表达式选择器
+  const renderCronField = (field: string, value: any, label: string) => {
+    return (
+      <div className="form-group" key={field}>
+        <label>{label}</label>
+        <div className="cron-editor-container">
+          <input
+            type="text"
+            value={value || ''}
+            onChange={(e) => handleChange(field, e.target.value)}
+            className="form-control cron-input"
+            placeholder="秒 分 时 日 月 周 (例如: 0 * * * * *)"
+          />
+          <button
+            type="button"
+            onClick={() => setShowCronSelector(true)}
+            className="btn-cron-edit"
+          >
+            图形化编辑
+          </button>
+        </div>
+        
+        {showCronSelector && (
+          <CronSelector
+            value={value || '0 * * * * *'}
+            onChange={(newValue) => handleChange(field, newValue)}
+            onClose={() => setShowCronSelector(false)}
+          />
+        )}
+      </div>
+    );
+  };
+
   const renderField = (field: string, value: any, label: string) => {
+    // 处理Cron表达式字段
+    if (field === 'Cron') {
+      return renderCronField(field, value, label);
+    }
+
     // 处理 Identity 数组类型字段
     if (field in identityArrayFields && Array.isArray(value)) {
       return renderIdentityArrayField(field, value, label);
