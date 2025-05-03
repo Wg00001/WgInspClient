@@ -134,7 +134,7 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
       {showEditModal && (
         <tr>
           <td colSpan={6}>
-            <div className="modal-overlay">
+            <div className="modal-overlay" style={{ zIndex: 2000 }}>
               <div className="modal-content" style={{ minWidth: 400 }}>
                 <h3>编辑巡检配置</h3>
                 <div className="form-group">
@@ -167,7 +167,7 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
       {showDetail && (
         <tr>
           <td colSpan={6}>
-            <div className="modal-overlay">
+            <div className="modal-overlay" style={{ zIndex: 2000 }}>
               <div className="modal-content" style={{ minWidth: 400 }}>
                 <h3>巡检配置详情</h3>
                 <div className="form-group"><label>名称</label><div>{config.Name}</div></div>
@@ -192,7 +192,7 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
       {showDeleteConfirm && (
         <tr>
           <td colSpan={6}>
-            <div className="delete-confirm-modal" style={{ zIndex: 1100 }}>
+            <div className="delete-confirm-modal" style={{ zIndex: 3000 }}>
               <div className="modal-content">
                 <p>确定要删除此巡检配置吗？此操作不可恢复。</p>
                 <div className="modal-actions">

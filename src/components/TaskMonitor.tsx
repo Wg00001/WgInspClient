@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { wsClient } from '../services/wsClient';
 import '../styles/TaskMonitor.css';
 
@@ -79,6 +79,14 @@ const TaskMonitor: React.FC = () => {
   const [pendingCronRefresh, setPendingCronRefresh] = useState(false);
   const [showTaskSuccessDialog, setShowTaskSuccessDialog] = useState(false);
   const [successTaskName, setSuccessTaskName] = useState<string>('');
+  
+  // 使用ref来跟踪最新的tasks状态
+  const tasksRef = useRef<TaskStatus[]>([]);
+  
+  // 当tasks更新时，同步更新ref
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   // 设置监听任务
   const setupTaskListener = () => {
@@ -126,8 +134,9 @@ const TaskMonitor: React.FC = () => {
       if (!message.success) {
         setError(message.message);
       } else {
-        // 找到执行成功的任务名称
-        const taskName = tasks.find(task => task.UUID === taskId)?.TaskName || taskId;
+        // 使用ref获取最新的tasks状态
+        const currentTasks = tasksRef.current;
+        const taskName = currentTasks.find(task => task.UUID === taskId)?.TaskName || taskId;
         setSuccessTaskName(taskName);
         setShowTaskSuccessDialog(true);
       }
@@ -162,7 +171,7 @@ const TaskMonitor: React.FC = () => {
       wsClient.unsubscribe('task_do');
       wsClient.unsubscribe('task_cron_refresh');
     };
-  }, [pendingCronRefresh, tasks]);
+  }, [pendingCronRefresh]);
 
   const handleRunTask = (name: string) => {
     setRunningTasks(prev => new Set(prev).add(name));

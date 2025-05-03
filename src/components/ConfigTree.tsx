@@ -138,8 +138,16 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
       console.log('收到全局配置变更消息:', message);
       
       if (message.success && message.config_data && message.config_type) {
+        // 如果configData为null，防止错误
+        if (!configData) {
+          console.warn('configData为null，等待初始化完成后再更新');
+          return;
+        }
+        
         // 只更新特定类型的数据
         const newConfigData = { ...configData };
+        
+        console.log(`正在更新${message.config_type}类型的配置数据`);
         
         switch (message.config_type) {
           case 'db_config':
@@ -164,10 +172,15 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             newConfigData.KBases = message.config_data;
             break;
           case 'inspector_config':
+            console.log('更新inspector_config数据:', message.config_data);
             newConfigData.InspNodes = message.config_data;
             break;
+          default:
+            console.warn(`未知的配置类型: ${message.config_type}`);
+            return; // 不处理未知类型
         }
         
+        console.log('更新后的配置数据:', newConfigData);
         setConfigData(newConfigData);
       } else if (!message.success) {
         // 处理失败
@@ -561,8 +574,8 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           AlertID: { ID: 0, Name: '' },
           KBaseAgentID: { ID: 0, Name: '' },
           KBase: [],
-          KBaseResults: 0,
-          KBaseMaxLen: 0
+          KBaseResults: 5,
+          KBaseMaxLen: 1000
         };
       case 'kbase_config':
         return {
