@@ -98,6 +98,22 @@ const Notifications: React.FC = () => {
     }
   };
 
+  // 截取过长的内容
+  const truncateContent = (content: string, maxLength: number = 100) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
+
+  // 将文本中的换行符转换为 HTML 的换行
+  const formatContentWithLineBreaks = (content: string) => {
+    return content.split('\n').map((text, index) => (
+      <React.Fragment key={index}>
+        {text}
+        {index < content.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
+
   const renderStatusText = (status: NoticeConfirmStatus) => {
     switch (status) {
       case 'Unread':
@@ -162,7 +178,7 @@ const Notifications: React.FC = () => {
                     <div className="notification-time">{formatTimeString(notice.Time)}</div>
                     {renderStatusText(notice.ConfirmStat)}
                   </div>
-                  <div className="notification-message">{notice.Content}</div>
+                  <div className="notification-message">{truncateContent(notice.Content)}</div>
                 </div>
               </div>
             ))}
@@ -189,38 +205,40 @@ const Notifications: React.FC = () => {
       )}
 
       {selectedNotice && (
-        <div className="notice-detail-modal">
-          <div className="modal-overlay" onClick={() => setSelectedNotice(null)}></div>
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>通知详情</h3>
-              <button className="close-button" onClick={() => setSelectedNotice(null)}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="notice-time">{formatTimeString(selectedNotice.Time)}</div>
-              <div className="notice-content">{selectedNotice.Content}</div>
-              <div className="notice-status">
-                状态: {renderStatusText(selectedNotice.ConfirmStat)}
+        <>
+          {/* <div className="modal-overlay" onClick={() => setSelectedNotice(null)}></div> */}
+          <div className="notice-detail-modal-container">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h3>通知详情</h3>
+                <button className="close-button" onClick={() => setSelectedNotice(null)}>×</button>
               </div>
-            </div>
-            {selectedNotice.ConfirmStat === 'UnConfirm' && (
-              <div className="modal-actions">
-                <button 
-                  className="btn-reject"
-                  onClick={() => handleConfirm(selectedNotice, 'NotAllow')}
-                >
-                  拒绝
-                </button>
-                <button 
-                  className="btn-accept"
-                  onClick={() => handleConfirm(selectedNotice, 'Allow')}
-                >
-                  接受
-                </button>
+              <div className="modal-body">
+                <div className="notice-time">{formatTimeString(selectedNotice.Time)}</div>
+                <div className="notice-content">{formatContentWithLineBreaks(selectedNotice.Content)}</div>
+                <div className="notice-status">
+                  状态: {renderStatusText(selectedNotice.ConfirmStat)}
+                </div>
               </div>
-            )}
+              {selectedNotice.ConfirmStat === 'UnConfirm' && (
+                <div className="modal-actions">
+                  <button 
+                    className="btn-reject"
+                    onClick={() => handleConfirm(selectedNotice, 'NotAllow')}
+                  >
+                    拒绝
+                  </button>
+                  <button 
+                    className="btn-accept"
+                    onClick={() => handleConfirm(selectedNotice, 'Allow')}
+                  >
+                    接受
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

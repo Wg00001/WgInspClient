@@ -913,7 +913,62 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       );
     }
 
-    if (typeof value === 'object' && value !== null) {
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      // 特殊处理 kbase_config 下的 Value.embedding
+      if (type === 'kbase_config' && field === 'Value') {
+        return (
+          <div className="form-group" key={field}>
+            <label>{label}</label>
+            {Object.entries(value).map(([key, val]) => {
+              if (key === 'embedding' && typeof val === 'object' && val !== null) {
+                return (
+                  <div key={key} className="nested-field-group">
+                    <label>{key}</label>
+                    {Object.entries(val).map(([embedKey, embedVal]) => (
+                      <div key={embedKey} className="nested-field">
+                        <label>{embedKey}</label>
+                        <input
+                          type="text"
+                          value={embedVal as string || ''}
+                          onChange={(e) => {
+                            const newValue = {
+                              ...value,
+                              [key]: {
+                                ...(value[key] || {}),
+                                [embedKey]: e.target.value
+                              }
+                            };
+                            handleChange(field, newValue);
+                          }}
+                          className="form-control"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              } else {
+                // Value 下的其他字段
+                return (
+                  <div key={key} className="nested-field">
+                    <label>{key}</label>
+                    <input
+                      type="text"
+                      value={val as string || ''}
+                      onChange={(e) => {
+                        const newValue = { ...value, [key]: e.target.value };
+                        handleChange(field, newValue);
+                      }}
+                      className="form-control"
+                    />
+                  </div>
+                );
+              }
+            })}
+          </div>
+        );
+      }
+
+      // 通用对象渲染逻辑 (保持不变，以防其他地方用到)
       return (
         <div className="form-group" key={field}>
           <label>{label}</label>
@@ -922,8 +977,11 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
               <label>{key}</label>
               <input
                 type="text"
-                value={val as string}
-                onChange={(e) => handleChange(field, { ...value, [key]: e.target.value })}
+                value={val as string || ''}
+                onChange={(e) => {
+                  const newValue = { ...value, [key]: e.target.value };
+                  handleChange(field, newValue);
+                }}
                 className="form-control"
               />
             </div>

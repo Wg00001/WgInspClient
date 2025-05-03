@@ -166,7 +166,7 @@
 }
 
 /* 模态框样式 */
-.notice-detail-modal {
+.notice-detail-modal-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -175,17 +175,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1100;
+  z-index: 1201;
+  pointer-events: none;
+  padding: 20px;
 }
 
-.modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-}
 
 .modal-content {
   position: relative;
@@ -196,7 +190,7 @@
   max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  z-index: 1101;
+  pointer-events: auto;
 }
 
 .modal-header {
@@ -310,7 +304,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1100;
 }
 
 .error-modal-content {
