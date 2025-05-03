@@ -307,80 +307,19 @@ export class WSClient {
       if (message.action === 'config_update' || message.action === 'config_create' || message.action === 'config_delete' || message.action === 'config_save') {
         console.log('检测到配置变更消息:', message.action, '类型:', message.config_type);
         
-        // 首先处理特定配置类型的订阅
-        if (message.config_type && message.config_type !== 'Meta' && message.config_type !== 'meta') {
-          const typeHandlers = this.listeners.get(message.config_type);
-          if (typeHandlers) {
-            console.log(`找到${message.config_type}类型的订阅处理程序，共${typeHandlers.length}个处理函数`);
-            typeHandlers.forEach(handler => {
-              try {
-                handler(message);
-              } catch (error) {
-                console.error(`处理${message.config_type}类型消息时出错:`, error);
-              }
-            });
-          } else {
-            console.log(`未找到${message.config_type}类型的订阅处理程序`);
-          }
+        const handlers = this.listeners.get('config_change');
+        if (handlers) {
+          console.log(`找到订阅处理程序`);
+          handlers.forEach(handler => {
+            try {
+              handler(message);
+            } catch (error) {
+              console.error('处理消息时出错:', error);
+            }
+          });
         }
         
-        // 处理配置操作的通用处理程序
-        // 处理config_update消息
-        if (message.action === 'config_update') {
-          const updateHandlers = this.listeners.get('config_update');
-          if (updateHandlers) {
-            console.log(`找到config_update订阅处理程序，共${updateHandlers.length}个处理函数`);
-            updateHandlers.forEach(handler => {
-              try {
-                handler(message);
-              } catch (error) {
-                console.error('处理config_update消息时出错:', error);
-              }
-            });
-          }
-        }
-        // 处理config_create消息
-        else if (message.action === 'config_create') {
-          const createHandlers = this.listeners.get('config_create');
-          if (createHandlers) {
-            console.log(`找到config_create订阅处理程序，共${createHandlers.length}个处理函数`);
-            createHandlers.forEach(handler => {
-              try {
-                handler(message);
-              } catch (error) {
-                console.error('处理config_create消息时出错:', error);
-              }
-            });
-          }
-        }
-        // 处理config_delete消息
-        else if (message.action === 'config_delete') {
-          const deleteHandlers = this.listeners.get('config_delete');
-          if (deleteHandlers) {
-            console.log(`找到config_delete订阅处理程序，共${deleteHandlers.length}个处理函数`);
-            deleteHandlers.forEach(handler => {
-              try {
-                handler(message);
-              } catch (error) {
-                console.error('处理config_delete消息时出错:', error);
-              }
-            });
-          }
-        }
-        // 处理config_save消息
-        else if (message.action === 'config_save') {
-          const saveHandlers = this.listeners.get('config_save');
-          if (saveHandlers) {
-            console.log(`找到config_save订阅处理程序，共${saveHandlers.length}个处理函数`);
-            saveHandlers.forEach(handler => {
-              try {
-                handler(message);
-              } catch (error) {
-                console.error('处理config_save消息时出错:', error);
-              }
-            });
-          }
-        }
+        
         
         console.log('配置消息处理完成');
         return; // 处理完成后直接返回，避免后续重复处理

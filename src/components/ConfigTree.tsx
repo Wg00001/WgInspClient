@@ -180,7 +180,6 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             return; // 不处理未知类型
         }
         
-        console.log('更新后的配置数据:', newConfigData);
         setConfigData(newConfigData);
       } else if (!message.success) {
         // 处理失败
@@ -189,9 +188,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     };
 
     // 订阅配置变更
-    wsClient.subscribe('config_update', handleConfigChange);
-    wsClient.subscribe('config_create', handleConfigChange);
-    wsClient.subscribe('config_delete', handleConfigChange);
+    wsClient.subscribe('config_change', handleConfigChange);
 
     // 确保已订阅后再发送请求
     setTimeout(() => {
@@ -203,9 +200,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
     return () => {
       console.log('ConfigTree组件卸载，清理订阅');
       wsClient.unsubscribe('config_get');
-      wsClient.unsubscribe('config_update');
-      wsClient.unsubscribe('config_create');
-      wsClient.unsubscribe('config_delete');
+      wsClient.unsubscribe('config_change');
     };
   }, []);
 
