@@ -3,6 +3,71 @@ import '../styles/ConfigEditForm.css';
 import { Identity, ConfigType } from '../types/config';
 import { wsClient } from '../services/wsClient';
 
+// 日期时间选择器接口定义
+interface DateTimeSelectorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+// 日期时间选择器组件
+const DateTimeSelector: React.FC<DateTimeSelectorProps> = ({ value, onChange, placeholder }) => {
+  // 检查是否为默认空日期
+  const isDefaultDate = value === '0001-01-01T00:00:00Z';
+  
+  // 从ISO格式转换为本地日期时间格式
+  const getLocalDateTimeValue = () => {
+    if (isDefaultDate) return '';
+    
+    try {
+      const date = new Date(value);
+      // 格式化为YYYY-MM-DDThh:mm (HTML datetime-local格式)
+      return date.toISOString().slice(0, 16);
+    } catch (error) {
+      return '';
+    }
+  };
+
+  // 处理日期时间变更
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (!newValue) {
+      // 如果清空，使用默认值
+      onChange('0001-01-01T00:00:00Z');
+      return;
+    }
+    
+    try {
+      // 将本地日期时间转换为ISO格式
+      const date = new Date(newValue);
+      onChange(date.toISOString());
+    } catch (error) {
+      console.error('日期转换错误:', error);
+    }
+  };
+
+  return (
+    <div className="datetime-selector">
+      <input
+        type="datetime-local"
+        value={getLocalDateTimeValue()}
+        onChange={handleChange}
+        className="form-control"
+        placeholder={placeholder || "选择日期和时间"}
+      />
+      {value && !isDefaultDate && (
+        <button
+          type="button"
+          onClick={() => onChange('0001-01-01T00:00:00Z')}
+          className="btn-clear-date"
+        >
+          清除
+        </button>
+      )}
+    </div>
+  );
+};
+
 // Cron表达式选择器接口定义
 interface CronSelectorProps {
   value: string;
@@ -185,6 +250,16 @@ const identityArrayFields: Record<string, { type: ConfigType }> = {
   'InspNames': { type: 'inspector_config' }
 };
 
+// LogFilter 时间字段
+const logFilterTimeFields = ['StartTime', 'EndTime'];
+
+// 数字字段配置
+const numericFields: Record<string, { min?: number; max?: number; step?: number }> = {
+  'Temperature': { min: 0, max: 1, step: 0.1 },
+  'KBaseResults': { min: 0, step: 1 },
+  'KBaseMaxLen': { min: 0, step: 1 }
+};
+
 const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSave, onDelete, type }) => {
   const [formData, setFormData] = React.useState(config);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -249,6 +324,29 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     }));
   };
 
+  // 准备提交前的数据处理
+  const prepareDataForSubmit = (data: any) => {
+    // 创建一个副本，避免修改原始数据
+    const processedData = { ...data };
+    
+    // 注意：不再处理LogFilter中的Identity数组，保留完整的Identity对象
+    
+    // 确保所有数字字段都是数字类型
+    Object.keys(numericFields).forEach(field => {
+      if (field in processedData && processedData[field] !== undefined && processedData[field] !== null) {
+        // 如果字段值是字符串，尝试转换为数字
+        if (typeof processedData[field] === 'string') {
+          const numValue = parseFloat(processedData[field]);
+          if (!isNaN(numValue)) {
+            processedData[field] = numValue;
+          }
+        }
+      }
+    });
+    
+    return processedData;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -271,7 +369,11 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       alert('Identity 只能包含小写字母、数字、连字符(-)和下划线(_)');
       return;
     }
-    onSave(formData);
+    
+    // 处理数据并保存
+    const processedData = prepareDataForSubmit(formData);
+    onSave(processedData);
+    
     // 直接关闭编辑模式，因为会很快收到 config_update 消息
     onCancel();
   };
@@ -508,7 +610,116 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     );
   };
 
+  // 渲染日期时间字段
+  const renderDateTimeField = (parent: string, field: string, value: string, label: string) => {
+    return (
+      <div key={`${parent}.${field}`} className="nested-field">
+        <label>{label}</label>
+        <DateTimeSelector
+          value={value}
+          onChange={(newValue) => handleNestedChange(parent, field, newValue)}
+          placeholder={`选择${label}`}
+        />
+      </div>
+    );
+  };
+
+  // 渲染数字输入字段
+  const renderNumericField = (field: string, value: any, label: string) => {
+    const config = numericFields[field] || { step: 1 };
+    
+    // 确保值是数字
+    const numericValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+    
+    const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+      // 如果输入为空，保持为空（允许用户清除输入）
+      if (inputValue === '') {
+        handleChange(field, '');
+        return;
+      }
+      
+      // 尝试转换为数字
+      const parsedValue = parseFloat(inputValue);
+      if (!isNaN(parsedValue)) {
+        // 检查是否在允许范围内
+        if (config.min !== undefined && parsedValue < config.min) {
+          handleChange(field, config.min);
+        } else if (config.max !== undefined && parsedValue > config.max) {
+          handleChange(field, config.max);
+        } else {
+          handleChange(field, parsedValue);
+        }
+      }
+    };
+    
+    const incrementValue = () => {
+      const step = config.step || 1;
+      const newValue = Math.round((numericValue + step) * 100) / 100; // 处理浮点数精度问题
+      
+      if (config.max !== undefined && newValue > config.max) {
+        handleChange(field, config.max);
+      } else {
+        handleChange(field, newValue);
+      }
+    };
+    
+    const decrementValue = () => {
+      const step = config.step || 1;
+      const newValue = Math.round((numericValue - step) * 100) / 100; // 处理浮点数精度问题
+      
+      if (config.min !== undefined && newValue < config.min) {
+        handleChange(field, config.min);
+      } else {
+        handleChange(field, newValue);
+      }
+    };
+    
+    return (
+      <div className="form-group" key={field}>
+        <label>{label}</label>
+        <div className="numeric-input-container">
+          <input
+            type="number"
+            value={value === '' ? '' : numericValue}
+            onChange={handleNumberChange}
+            min={config.min}
+            max={config.max}
+            step={config.step || 1}
+            className="form-control numeric-input"
+          />
+          <div className="numeric-controls">
+            <button 
+              type="button" 
+              onClick={incrementValue}
+              className="btn-numeric"
+            >
+              +
+            </button>
+            <button 
+              type="button" 
+              onClick={decrementValue}
+              className="btn-numeric"
+            >
+              -
+            </button>
+          </div>
+        </div>
+        {field === 'Temperature' && (
+          <div className="field-hint">
+            请输入0到1之间的值
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderField = (field: string, value: any, label: string) => {
+    // 处理数字类型字段
+    if (field in numericFields) {
+      return renderNumericField(field, value, label);
+    }
+
     // 处理Cron表达式字段
     if (field === 'Cron') {
       return renderCronField(field, value, label);
@@ -632,13 +843,48 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
         <div className="form-group" key={field}>
           <label>{label}</label>
           {Object.entries(value).map(([key, val]) => {
-            // 特殊处理 LogFilter 中的 Identity 数组字段
+            // 时间字段使用日期时间选择器
+            if (logFilterTimeFields.includes(key)) {
+              return renderDateTimeField(field, key, val as string, key);
+            }
+            
+            // Identity 数组字段
             if (key in identityArrayFields && Array.isArray(val)) {
+              const configType = identityArrayFields[key].type;
               return renderNestedIdentityArrayField(field, key, val as Identity[], key);
             }
             
+            // Identity 数组字段 (可能为null)
+            if (key in identityArrayFields && !val) {
+              const configType = identityArrayFields[key].type;
+              // 初始化为空数组
+              handleNestedChange(field, key, []);
+              return renderNestedIdentityArrayField(field, key, [], key);
+            }
+            
+            // TaskIDs 字段 (普通字符串数组)
+            if (key === 'TaskIDs') {
+              return (
+                <div key={`${field}.${key}`} className="nested-field">
+                  <label>{key}</label>
+                  <input
+                    type="text"
+                    value={Array.isArray(val) ? (val as string[]).join(', ') : ''}
+                    onChange={(e) => handleNestedChange(
+                      field, 
+                      key, 
+                      e.target.value ? e.target.value.split(',').map(v => v.trim()) : null
+                    )}
+                    className="form-control"
+                    placeholder="多个值请用逗号分隔"
+                  />
+                </div>
+              );
+            }
+            
+            // 其他字段
             return (
-              <div key={key} className="nested-field">
+              <div key={`${field}.${key}`} className="nested-field">
                 <label>{key}</label>
                 <input
                   type="text"

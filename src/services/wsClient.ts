@@ -304,11 +304,11 @@ export class WSClient {
         return;
       }
 
-      if (message.action === 'config_update' || message.action === 'config_create' || message.action === 'config_delete') {
+      if (message.action === 'config_update' || message.action === 'config_create' || message.action === 'config_delete' || message.action === 'config_save') {
         console.log('检测到config_update/create/delete消息:', message);
         
         // 首先处理特定配置类型的订阅
-        if (message.config_type) {
+        if (message.config_type != '') {
           const typeHandlers = this.listeners.get(message.config_type);
           if (typeHandlers) {
             console.log(`找到${message.config_type}类型的订阅处理程序，正在调用...`);
@@ -321,7 +321,7 @@ export class WSClient {
           const updateHandlers = this.listeners.get('config_update');
           if (updateHandlers) {
             updateHandlers.forEach(handler => handler(message));
-          }
+            }
         }
         
         // 处理config_create消息
@@ -342,18 +342,19 @@ export class WSClient {
           }
         }
         
+        else if (message.action === 'config_save') { // 处理配置更新消息
+          console.log('检测到config_save消息:', message);
+          const handlers = this.listeners.get('config_save');
+          if (handlers) {
+            handlers.forEach(handler => handler(message));
+          }
+          return;
+        }
+
         return;
       }
 
-      // 处理配置更新消息
-      if (message.action === 'config_save') {
-        console.log('检测到config_save消息:', message);
-        const handlers = this.listeners.get('config_save');
-        if (handlers) {
-          handlers.forEach(handler => handler(message));
-        }
-        return;
-      }
+
 
       // 处理task_listen消息
       if (message.action === 'task_listen') {

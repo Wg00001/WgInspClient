@@ -542,23 +542,20 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           Url: '',
           ApiKey: '',
           Model: '',
-          Temperature: 0,
-          SystemMessage: ''
+          Temperature: 0.6,
         };
       case 'agent_task_config':
         return {
           Name: '',
-          Cron: {
-            CronTab: ''
-          },
+          Cron: '',
           LogID: { ID: 0, Name: '' },
           LogFilter: {
-            StartTime: '',
-            EndTime: '',
+            StartTime: '0001-01-01T00:00:00Z',
+            EndTime: '0001-01-01T00:00:00Z',
             TaskNames: null,
             DBNames: null,
-            TaskIDs: null,
             InspNames: null
+            // TaskIDs: null,
           },
           AgentID: { ID: 0, Name: '' },
           AlertID: { ID: 0, Name: '' },

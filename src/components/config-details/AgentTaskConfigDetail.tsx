@@ -132,10 +132,10 @@ const AgentTaskConfigDetail: React.FC<AgentTaskConfigDetailProps> = ({ config, o
               <span className="config-detail-label">日志过滤数据库名称</span>
               <span className="config-detail-value">{displayIdentityArray(config.LogFilter.DBNames)}</span>
             </div>
-            <div className="config-detail-item">
+            {/* <div className="config-detail-item">
               <span className="config-detail-label">日志过滤任务ID</span>
               <span className="config-detail-value">{displayStringArray(config.LogFilter.TaskIDs)}</span>
-            </div>
+            </div> */}
             <div className="config-detail-item">
               <span className="config-detail-label">日志过滤巡检名称</span>
               <span className="config-detail-value">{displayIdentityArray(config.LogFilter.InspNames)}</span>

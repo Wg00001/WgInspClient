@@ -77,6 +77,8 @@ const TaskMonitor: React.FC = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [pendingCronRefresh, setPendingCronRefresh] = useState(false);
+  const [showTaskSuccessDialog, setShowTaskSuccessDialog] = useState(false);
+  const [successTaskName, setSuccessTaskName] = useState<string>('');
 
   // 设置监听任务
   const setupTaskListener = () => {
@@ -113,13 +115,21 @@ const TaskMonitor: React.FC = () => {
 
     // 处理任务执行响应
     const handleTaskDoResponse = (message: any) => {
+      const taskId = message.config_data;
+      
       setRunningTasks(prev => {
         const newSet = new Set(prev);
-        newSet.delete(message.config_data);
+        newSet.delete(taskId);
         return newSet;
       });
-      if (!message.success){
+      
+      if (!message.success) {
         setError(message.message);
+      } else {
+        // 找到执行成功的任务名称
+        const taskName = tasks.find(task => task.UUID === taskId)?.TaskName || taskId;
+        setSuccessTaskName(taskName);
+        setShowTaskSuccessDialog(true);
       }
     };
 
@@ -152,7 +162,7 @@ const TaskMonitor: React.FC = () => {
       wsClient.unsubscribe('task_do');
       wsClient.unsubscribe('task_cron_refresh');
     };
-  }, [pendingCronRefresh]);
+  }, [pendingCronRefresh, tasks]);
 
   const handleRunTask = (name: string) => {
     setRunningTasks(prev => new Set(prev).add(name));
@@ -185,6 +195,10 @@ const TaskMonitor: React.FC = () => {
 
   const handleCloseSuccessDialog = () => {
     setShowSuccessDialog(false);
+  };
+
+  const handleCloseTaskSuccessDialog = () => {
+    setShowTaskSuccessDialog(false);
   };
 
   const formatTime = (timeString: string) => {
@@ -262,12 +276,20 @@ const TaskMonitor: React.FC = () => {
         visible={showConfirmDialog}
       />
 
-      {/* 成功提示框 */}
+      {/* 调度器重启成功提示框 */}
       <AlertDialog
         title="操作成功"
         message="调度器已成功重启！"
         onClose={handleCloseSuccessDialog}
         visible={showSuccessDialog}
+      />
+
+      {/* 任务执行成功提示框 */}
+      <AlertDialog
+        title="任务执行成功"
+        message={`任务 "${successTaskName}" 已成功执行!`}
+        onClose={handleCloseTaskSuccessDialog}
+        visible={showTaskSuccessDialog}
       />
     </div>
   );
