@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import '../styles/ConfigEditForm.css';
 import { Identity, ConfigType } from '../types/config';
 import { wsClient } from '../services/wsClient';
@@ -267,6 +267,8 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   const [selectedField, setSelectedField] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showCronSelector, setShowCronSelector] = useState(false);
+  const [driverLists, setDriverLists] = useState<Record<string, string[]>>({});
+  const [loadingDriverListForType, setLoadingDriverListForType] = useState<string | null>(null);
   
   useEffect(() => {
     // 监听服务端响应
@@ -281,10 +283,44 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     
     wsClient.subscribe('config_get_id', handleGetIdResponse);
     
+    const handleDriverListResponse = (response: any) => {
+      if (response.action === 'driver_list' && response.success && response.config_data && response.config_type) {
+        setDriverLists(prev => ({
+          ...prev,
+          [response.config_type]: response.config_data
+        }));
+        setLoadingDriverListForType(null); // 清除加载状态
+      } else if (response.action === 'driver_list' && !response.success) {
+        console.error(`Failed to load driver list for ${response.config_type}: ${response.message}`);
+        setLoadingDriverListForType(null); // 清除加载状态
+      }
+    };
+
+    wsClient.subscribe('driver_list', handleDriverListResponse);
+    
     return () => {
       wsClient.unsubscribe('config_get_id');
+      wsClient.unsubscribe('driver_list');
     };
   }, []);
+
+  // 使用useCallback包裹loadDriverList以确保其引用稳定性
+  const loadDriverList = useCallback((configType: ConfigType | string) => {
+    // 确保configType是有效的非空字符串
+    if (typeof configType === 'string' && configType.trim() !== '' && 
+        (!driverLists[configType] || driverLists[configType].length === 0) && 
+        loadingDriverListForType !== configType) {
+      setLoadingDriverListForType(configType);
+      wsClient.send({ action: 'driver_list', config_type: configType });
+    }
+  }, [driverLists, loadingDriverListForType]);
+
+  // 这个useEffect负责在type变化时主动加载driver list
+  useEffect(() => {
+    if (type && type.trim() !== '') { // 确保type是有效的非空字符串
+      loadDriverList(type);
+    }
+  }, [type, loadDriverList]);
 
   // 当用户点击添加按钮时，加载相应类型的配置项列表
   const loadIdentityOptions = (configType: ConfigType) => {
@@ -1002,6 +1038,71 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
             className={`form-control ${formErrors.Name ? 'error' : ''}`}
           />
           {formErrors.Name && <div className="error-message">{formErrors.Name}</div>}
+        </div>
+      );
+    }
+
+    // 处理 Driver 字段的特殊逻辑
+    if (field === 'Driver') {
+      const currentConfigType = type;
+      const drivers = driverLists[currentConfigType];
+      const isLoadingDrivers = loadingDriverListForType === currentConfigType;
+
+      if (isLoadingDrivers) {
+        return (
+          <div className="form-group" key={field}>
+            <label>{label}</label>
+            <select className="form-control" disabled>
+              <option value="">加载驱动列表中...</option>
+            </select>
+          </div>
+        );
+      }
+
+      if (drivers && drivers.length > 0) {
+        return (
+          <div className="form-group" key={field}>
+            <label>{label}</label>
+            <select
+              value={value || ''} // Ensure value is not null/undefined for select
+              onChange={(e) => handleChange(field, e.target.value)}
+              className="form-control"
+            >
+              <option value="">请选择{label}</option>
+              {drivers.map((driverOption) => (
+                <option key={driverOption} value={driverOption}>
+                  {driverOption}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+      
+      if (drivers && drivers.length === 0) { // 加载完成，但列表为空
+        return (
+          <div className="form-group" key={field}>
+            <label>{label}</label>
+            <select className="form-control" disabled>
+              <option value="">无可用驱动</option>
+            </select>
+            <div className="field-hint" style={{ marginTop: '5px' }}>
+                没有可用的驱动程序选项。
+            </div>
+          </div>
+        );
+      }
+
+      // Fallback: drivers is undefined (初始状态或加载未成功)
+      return (
+        <div className="form-group" key={field}>
+          <label>{label}</label>
+          <select className="form-control" disabled>
+            <option value="">正在准备驱动列表...</option>
+          </select>
+          <div className="field-hint" style={{ marginTop: '5px' }}>
+              驱动列表正在加载或初始化。如果长时间未出现，请检查网络连接。
+          </div>
         </div>
       );
     }

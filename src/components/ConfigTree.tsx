@@ -135,7 +135,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
     // 添加全局配置更新/创建/删除处理器
     const handleConfigChange = (message: ResponseMsg) => {
-      console.log('收到全局配置变更消息:', message);
+      console.log('收到配置变更消息:', message.action, message.config_type);
       
       if (message.success && message.config_data && message.config_type) {
         // 如果configData为null，防止错误
