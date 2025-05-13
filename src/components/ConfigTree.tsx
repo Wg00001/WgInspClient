@@ -34,6 +34,21 @@ interface ConfigTreeProps {
   onLogout: () => void;
 }
 
+// 添加辅助函数，用于将ConfigType映射到ConfigMeta中的字段名
+const getFieldNameForConfigType = (type: ConfigType): keyof ConfigMeta | null => {
+  switch (type) {
+    case 'db_config': return 'DBs';
+    case 'log_config': return 'Logs';
+    case 'alert_config': return 'Alerts';
+    case 'task_config': return 'Tasks';
+    case 'agent_config': return 'Agents';
+    case 'agent_task_config': return 'AgentTasks';
+    case 'kbase_config': return 'KBases';
+    case 'inspector_config': return 'InspNodes';
+    default: return null;
+  }
+};
+
 const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
   const [configData, setConfigData] = useState<ConfigMeta | null>(null);
   const [selectedMenu, setSelectedMenu] = useState<string>('dbs');
@@ -94,7 +109,7 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
     const handleConfigMeta = (meta: ResponseMsg) => {
       try {
-        console.log('接收到配置元数据:', JSON.stringify(meta, null, 2));
+        console.log('接收到配置元数据');
         
         if (meta && meta.success && meta.config_data) {
           console.log('配置数据有效，尝试更新状态');
@@ -103,7 +118,6 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           // 直接尝试使用响应的config_data
           setConfigData(meta.config_data);
           console.log('状态更新后的ConfigData:', meta.config_data);
-          
           setError(null);
         } else {
           console.error('无效的配置元数据格式:', meta);
@@ -135,52 +149,29 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
 
     // 添加全局配置更新/创建/删除处理器
     const handleConfigChange = (message: ResponseMsg) => {
-      console.log('收到配置变更消息:', message.action, message.config_type);
+      console.log('进入handleConfigChange:', message);
       
       if (message.success && message.config_data && message.config_type) {
-        // 如果configData为null，防止错误
-        if (!configData) {
-          console.warn('configData为null，等待初始化完成后再更新');
-          return;
-        }
-        
-        // 只更新特定类型的数据
-        const newConfigData = { ...configData };
-        
-        console.log(`正在更新${message.config_type}类型的配置数据`);
-        
-        switch (message.config_type) {
-          case 'db_config':
-            newConfigData.DBs = message.config_data;
-            break;
-          case 'log_config':
-            newConfigData.Logs = message.config_data;
-            break;
-          case 'alert_config':
-            newConfigData.Alerts = message.config_data;
-            break;
-          case 'task_config':
-            newConfigData.Tasks = message.config_data;
-            break;
-          case 'agent_config':
-            newConfigData.Agents = message.config_data;
-            break;
-          case 'agent_task_config':
-            newConfigData.AgentTasks = message.config_data;
-            break;
-          case 'kbase_config':
-            newConfigData.KBases = message.config_data;
-            break;
-          case 'inspector_config':
-            console.log('更新inspector_config数据:', message.config_data);
-            newConfigData.InspNodes = message.config_data;
-            break;
-          default:
-            console.warn(`未知的配置类型: ${message.config_type}`);
-            return; // 不处理未知类型
-        }
-        
-        setConfigData(newConfigData);
+        setConfigData(currentConfigData => {
+          const fieldName = getFieldNameForConfigType(message.config_type as ConfigType);
+
+          if (!fieldName) {
+            console.warn(`未知的配置类型: ${String(message.config_type)}`);
+            return currentConfigData; // 如果类型未知，返回当前状态
+          }
+
+          // 如果 currentConfigData 为 null，则基础对象为空对象 {}
+          // 否则，使用 currentConfigData 作为基础
+          const baseConfigData = currentConfigData || {};
+          
+          const newConfigData = {
+            ...baseConfigData,
+            [fieldName]: message.config_data // 更新或添加特定类型的配置数据
+          };
+          
+          console.log(`已更新 ${message.config_type} (${fieldName}) 的配置数据. 新的configData:`, newConfigData);
+          return newConfigData as ConfigMeta;
+        });
       } else if (!message.success) {
         // 处理失败
         handleErrorMessage(message.message || `${message.action}操作失败`);

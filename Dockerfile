@@ -1,40 +1,34 @@
-# 构建阶段
-FROM node:18-alpine AS builder
+# 使用官方 Node.js LTS (长期支持) 版本作为基础镜像
+FROM node:lts-alpine AS development
 
 # 设置工作目录
 WORKDIR /app
 
-# 设置 npm 镜像源
-RUN npm config set registry https://registry.npmmirror.com
-
-# 复制 package.json 和 package-lock.json
+# 复制 package.json 和 package-lock.json (或 yarn.lock)
 COPY package*.json ./
 
-# 安装依赖
+# 安装项目依赖
 RUN npm install
 
-# 复制源代码
+# 复制项目所有文件到工作目录
 COPY . .
 
 # 构建应用
 RUN npm run build
 
-# 运行阶段
-FROM nginx:alpine
+# 生产阶段
+FROM node:lts-alpine AS production
 
-# 设置时区
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone
+WORKDIR /app
 
-# 复制构建产物到 Nginx 目录
-COPY --from=builder /app/build /usr/share/nginx/html
+# 从构建阶段复制构建好的静态文件
+COPY --from=development /app/build /app/build
 
-# 复制自定义 Nginx 配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# 安装 serve 来服务静态文件
+RUN npm install -g serve
 
-# 暴露端口
-EXPOSE 80
+# 暴露端口 (React 应用通常运行在 3000 端口)
+EXPOSE 3000
 
-# 启动 Nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# 启动应用的命令
+CMD ["serve", "-s", "build", "-l", "3000"] 
