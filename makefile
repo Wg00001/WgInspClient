@@ -1,5 +1,5 @@
 # 构建镜像
-docker build -t wginsp-client .
+docker build -t insp-client:latest .
 
 # 运行容器
 docker run -d -p 3001:80 --name wginsp-client --network=host wginsp-client
