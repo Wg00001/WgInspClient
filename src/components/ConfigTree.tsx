@@ -528,11 +528,11 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Name: '',
           Cron: '',
-          AllInspector: false,
-          TargetLogID: {},
+          LogID: { ID: 0, Name: '' },
+          AlertID: {ID: 0, Name: ''},
           TargetDB: [],
           Todo: [],
-          NotTodo: null
+          NotTodo: []
         };
       case 'agent_config':
         return {
@@ -567,14 +567,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Name: '',
           Driver: '',
-          Value: {
-            collection: '',
+          AgentID: { ID: 0, Name: '' },
+          Option: {
             path: '',
-            embedding: {
-              driver: '',
-              baseurl: '',
-              model: ''
-            }
+            collection: '',
+            tenant: '',
+            database: ''
           }
         };
       case 'inspector_config':

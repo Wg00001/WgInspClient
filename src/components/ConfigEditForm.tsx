@@ -235,14 +235,16 @@ const identityArrayFields: Record<string, { type: ConfigType }> = {
   'TargetDB': { type: 'db_config' },
   'Todo': { type: 'inspector_config' },
   'NotTodo': { type: 'inspector_config' },
-  'TargetLogID': { type: 'log_config' },
-  
+  'LogID': { type: 'log_config' },
+
   // AgentTaskConfig 相关字段
   'KBase': { type: 'kbase_config' },
-  'LogID': { type: 'log_config' },
-  'AgentID': { type: 'agent_config' },
+  'AgentID': { type: 'agent_config' }, // AgentTaskConfig 中的 AgentID
   'AlertID': { type: 'alert_config' },
   'KBaseAgentID': { type: 'agent_config' },
+
+  // KnowledgeBaseConfig 相关字段
+  'AgentID_kbase': { type: 'agent_config' }, // 用于区分 KnowledgeBaseConfig 的 AgentID
   
   // LogFilter 子字段
   'TaskNames': { type: 'task_config' },
@@ -362,15 +364,11 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
 
   // 准备提交前的数据处理
   const prepareDataForSubmit = (data: any) => {
-    // 创建一个副本，避免修改原始数据
-    const processedData = { ...data };
-    
-    // 注意：不再处理LogFilter中的Identity数组，保留完整的Identity对象
+    const processedData = { ...data }; // Create a shallow copy
     
     // 确保所有数字字段都是数字类型
     Object.keys(numericFields).forEach(field => {
       if (field in processedData && processedData[field] !== undefined && processedData[field] !== null) {
-        // 如果字段值是字符串，尝试转换为数字
         if (typeof processedData[field] === 'string') {
           const numValue = parseFloat(processedData[field]);
           if (!isNaN(numValue)) {
@@ -379,6 +377,29 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
         }
       }
     });
+
+    // For task_config, ensure TargetDB, Todo, and NotTodo are arrays of Identity ({ID, Name})
+    if (type === 'task_config') {
+      const fieldsToSanitize: string[] = ['TargetDB', 'Todo', 'NotTodo'];
+      fieldsToSanitize.forEach(field => {
+        if (processedData[field] && Array.isArray(processedData[field])) {
+          processedData[field] = processedData[field].map((item: any) => {
+            // Ensure item is an object and has ID and Name before trying to access them
+            if (item && typeof item === 'object' && item.hasOwnProperty('ID') && item.hasOwnProperty('Name')) {
+              return {
+                ID: item.ID,
+                Name: item.Name
+              };
+            }
+            // if item is not as expected, return it as is or handle error, for now, filter out malformed ones
+            return null; 
+          }).filter(item => item !== null); // Filter out any nulls if malformed items were encountered
+        } else if (field === 'NotTodo' && processedData[field] === undefined) {
+            // If NotTodo is undefined (e.g. was not present in original data or form), ensure it's set to null for backend
+            processedData[field] = null;
+        }
+      });
+    }
     
     return processedData;
   };
@@ -767,8 +788,28 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     }
 
     // 处理单个 Identity 类型字段（例如 TargetLogID, AgentID 等）
-    if (field in identityArrayFields && !Array.isArray(value)) {
-      const configType = identityArrayFields[field].type;
+    if ((field in identityArrayFields && !Array.isArray(value)) || (type === 'kbase_config' && field === 'AgentID')) {
+      // 对于 kbase_config 的 AgentID，我们使用 'AgentID_kbase' 作为 identityArrayFields 中的键
+      const fieldKeyForIdentityOptions = type === 'kbase_config' && field === 'AgentID' ? 'AgentID_kbase' : field;
+      const configType = identityArrayFields[fieldKeyForIdentityOptions]?.type;
+      
+      if (!configType) {
+        // 如果没有找到 configType，则按普通字段渲染
+        // 这可以防止在 identityArrayFields 中未定义但字段名恰好匹配时出错
+        return (
+          <div className="form-group" key={field}>
+            <label>{label}</label>
+            <input
+              type="text"
+              value={typeof value === 'object' && value !== null && 'Name' in value ? value.Name : (value || '')}
+              readOnly // 通常 Identity 对象不直接编辑其文本表示
+              className="form-control"
+            />
+             <span className="field-hint">无法确定此 Identity 字段的类型，请检查配置。</span>
+          </div>
+        );
+      }
+      
       // 是否已选择值
       const hasValue = value && typeof value === 'object' && 'ID' in value;
       
@@ -782,7 +823,7 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
                   <span>{value.Name}</span>
                   <button
                     type="button"
-                    onClick={() => handleChange(field, null)}
+                    onClick={() => handleChange(field, null)} // 设置为 null 或 {} 来清除
                     className="btn-remove-identity"
                   >
                     x
@@ -816,62 +857,85 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
       );
     }
 
-    if (field === 'Option' && typeof value === 'object') {
-      return (
-        <div className="form-group" key={field}>
-          <label>{label}</label>
-          <div className="option-list">
-            {Object.entries(value).map(([key, val], index) => (
-              <div key={index} className="option-item">
-                <input
-                  type="text"
-                  value={key}
-                  onChange={(e) => {
-                    const newOption = { ...value };
-                    delete newOption[key];
-                    newOption[e.target.value] = val;
-                    handleChange(field, newOption);
-                  }}
-                  className="option-key"
-                  placeholder="键"
-                />
-                <input
-                  type="text"
-                  value={val as string}
-                  onChange={(e) => {
-                    const newOption = { ...value };
-                    newOption[key] = e.target.value;
-                    handleChange(field, newOption);
-                  }}
-                  className="option-value"
-                  placeholder="值"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newOption = { ...value };
-                    delete newOption[key];
-                    handleChange(field, newOption);
-                  }}
-                  className="btn-delete-option"
-                >
-                  删除
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                const newOption = { ...value, '': '' };
-                handleChange(field, newOption);
-              }}
-              className="btn-add-option"
-            >
-              添加键值对
-            </button>
+    if (field === 'Option') {
+      // 检查此 Option 字段是否应渲染为键值对编辑器
+      if (type === 'kbase_config' || type === 'log_config' || type === 'alert_config') {
+        // 确保用于显示和迭代的数据是对象
+        const optionDataForDisplay = (typeof value === 'object' && value !== null) ? value : {};
+
+        return (
+          <div className="form-group" key={field}>
+            <label>{label}</label>
+            <div className="option-list">
+              {Object.entries(optionDataForDisplay).map(([key, val], index) => (
+                <div key={index} className="option-item">
+                  <input
+                    type="text"
+                    value={key}
+                    onChange={(e) => {
+                      // 操作基于原始值(value)，如果为null则视为空对象
+                      const newOptionState = { ...(value || {}) };
+                      delete newOptionState[key];
+                      newOptionState[e.target.value] = val; // val 来自 optionDataForDisplay
+                      handleChange(field, newOptionState);
+                    }}
+                    className="option-key"
+                    placeholder="键"
+                  />
+                  <input
+                    type="text"
+                    value={val as string} // Option 的值为 string
+                    onChange={(e) => {
+                      const newOptionState = { ...(value || {}) };
+                      newOptionState[key] = e.target.value; // key 来自 optionDataForDisplay
+                      handleChange(field, newOptionState);
+                    }}
+                    className="option-value"
+                    placeholder="值"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newOptionState = { ...(value || {}) };
+                      delete newOptionState[key]; // key 来自 optionDataForDisplay
+                      handleChange(field, newOptionState);
+                    }}
+                    className="btn-delete-option"
+                  >
+                    删除
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  let newKeySuggestion = '';
+                  // 使用 optionDataForDisplay (保证是对象) 来决定建议的键名
+                  if (type === 'kbase_config') {
+                    const existingKeys = Object.keys(optionDataForDisplay);
+                    if (!existingKeys.includes('path')) newKeySuggestion = 'path';
+                    else if (!existingKeys.includes('collection')) newKeySuggestion = 'collection';
+                    else if (!existingKeys.includes('tenant')) newKeySuggestion = 'tenant';
+                    else if (!existingKeys.includes('database')) newKeySuggestion = 'database';
+                  }
+                  // 更新时基于原始值(value)
+                  const newOptionState = { ...(value || {}), [newKeySuggestion]: '' };
+                  handleChange(field, newOptionState);
+                }}
+                className="btn-add-option"
+              >
+                添加键值对
+              </button>
+              {type === 'kbase_config' && (
+                <div className="field-hint" style={{ marginTop: '5px' }}>
+                  基础字段建议包含: path, collection, tenant, database
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      );
+        );
+      }
+      // 如果 'Option' 字段不属于上述类型，则会由后续的通用逻辑处理或退化为默认输入框
     }
 
     if (field === 'LogFilter' && typeof value === 'object') {
@@ -950,80 +1014,28 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
     }
 
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      // 特殊处理 kbase_config 下的 Value.embedding
-      if (type === 'kbase_config' && field === 'Value') {
+      // 通用对象渲染逻辑 (保持不变，以防其他地方用到)
+      if (field !== 'Option') {
         return (
           <div className="form-group" key={field}>
             <label>{label}</label>
-            {Object.entries(value).map(([key, val]) => {
-              if (key === 'embedding' && typeof val === 'object' && val !== null) {
-                return (
-                  <div key={key} className="nested-field-group">
-                    <label>{key}</label>
-                    {Object.entries(val).map(([embedKey, embedVal]) => (
-                      <div key={embedKey} className="nested-field">
-                        <label>{embedKey}</label>
-                        <input
-                          type="text"
-                          value={embedVal as string || ''}
-                          onChange={(e) => {
-                            const newValue = {
-                              ...value,
-                              [key]: {
-                                ...(value[key] || {}),
-                                [embedKey]: e.target.value
-                              }
-                            };
-                            handleChange(field, newValue);
-                          }}
-                          className="form-control"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                );
-              } else {
-                // Value 下的其他字段
-                return (
-                  <div key={key} className="nested-field">
-                    <label>{key}</label>
-                    <input
-                      type="text"
-                      value={val as string || ''}
-                      onChange={(e) => {
-                        const newValue = { ...value, [key]: e.target.value };
-                        handleChange(field, newValue);
-                      }}
-                      className="form-control"
-                    />
-                  </div>
-                );
-              }
-            })}
+            {Object.entries(value).map(([key, val]) => (
+              <div key={key} className="nested-field">
+                <label>{key}</label>
+                <input
+                  type="text"
+                  value={val as string || ''}
+                  onChange={(e) => {
+                    const newValue = { ...value, [key]: e.target.value };
+                    handleChange(field, newValue);
+                  }}
+                  className="form-control"
+                />
+              </div>
+            ))}
           </div>
         );
       }
-
-      // 通用对象渲染逻辑 (保持不变，以防其他地方用到)
-      return (
-        <div className="form-group" key={field}>
-          <label>{label}</label>
-          {Object.entries(value).map(([key, val]) => (
-            <div key={key} className="nested-field">
-              <label>{key}</label>
-              <input
-                type="text"
-                value={val as string || ''}
-                onChange={(e) => {
-                  const newValue = { ...value, [key]: e.target.value };
-                  handleChange(field, newValue);
-                }}
-                className="form-control"
-              />
-            </div>
-          ))}
-        </div>
-      );
     }
 
     // 处理常规的输入字段

@@ -71,7 +71,8 @@ export interface AgentTaskConfig extends Identity {
 
 export interface KnowledgeBaseConfig extends Identity {
   Driver: string;
-  Value: Record<string, any>;
+  AgentID: Identity;
+  Option: Record<string, string>;
 }
 
 export interface InspectorConfig extends Identity{

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TaskConfig } from '../../types/config';
+import { TaskConfig, Identity } from '../../types/config';
 import ConfigEditForm from '../ConfigEditForm';
 
 interface TaskConfigDetailProps {
@@ -62,9 +62,17 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
     return identities && identities.length > 0 ? identities.map(item => item.Name).join(', ') : '无';
   };
 
-  // Helper to display single Identity name or '无'
-  const display = (identity: string) => {
-    return identity ? identity : '-'; // Use '-' for consistency
+  // Renamed from display to displayString for clarity
+  const displayString = (value: string | undefined | null) => {
+    return value ? value : '-';
+  };
+
+  // New helper to display single Identity name safely
+  const displayIdentityName = (identity: Identity | undefined | null): string => {
+    if (identity && typeof identity === 'object' && identity.Name !== undefined && identity.Name !== null) {
+      return identity.Name === '' ? '-' : identity.Name;
+    }
+    return '-';
   };
 
   // Helper to display array of strings or '无'
@@ -86,11 +94,11 @@ const TaskConfigDetail: React.FC<TaskConfigDetailProps> = ({ config, onEdit, onD
       <div className="config-detail-content">
         <div className="config-detail-item">
           <span className="config-detail-label">日志ID</span>
-          <span className="config-detail-value">{display(config.LogID.Name)}</span>
+          <span className="config-detail-value">{displayIdentityName(config.LogID)}</span>
         </div>
         <div className="config-detail-item">
           <span className="config-detail-label">定时表达式</span>
-          <span className="config-detail-value">{display(config.Cron)}</span>
+          <span className="config-detail-value">{displayString(config.Cron)}</span>
         </div>
 
         {showDetails && (
