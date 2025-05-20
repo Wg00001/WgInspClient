@@ -78,7 +78,9 @@ const TaskMonitor: React.FC = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [pendingCronRefresh, setPendingCronRefresh] = useState(false);
   const [showTaskSuccessDialog, setShowTaskSuccessDialog] = useState(false);
+  const [showTaskErrorDialog, setShowTaskErrorDialog] = useState(false);
   const [successTaskName, setSuccessTaskName] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   
   // 使用ref来跟踪最新的tasks状态
   const tasksRef = useRef<TaskStatus[]>([]);
@@ -124,19 +126,16 @@ const TaskMonitor: React.FC = () => {
     // 处理任务执行响应
     const handleTaskDoResponse = (message: any) => {
       const taskId = message.config_data;
-      
-      setRunningTasks(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(taskId);
-        return newSet;
-      });
+      const currentTasks = tasksRef.current;
+      const taskName = currentTasks.find(task => task.UUID === taskId)?.TaskName || taskId;
       
       if (!message.success) {
-        setError(message.message);
+        // 提取错误信息的第一行作为简短提示
+        const errorLines = message.message.split('\n');
+        const shortError = errorLines[0].trim();
+        setErrorMessage(`${shortError}\n详细错误信息请前往告警器获取`);
+        setShowTaskErrorDialog(true);
       } else {
-        // 使用ref获取最新的tasks状态
-        const currentTasks = tasksRef.current;
-        const taskName = currentTasks.find(task => task.UUID === taskId)?.TaskName || taskId;
         setSuccessTaskName(taskName);
         setShowTaskSuccessDialog(true);
       }
@@ -174,7 +173,6 @@ const TaskMonitor: React.FC = () => {
   }, [pendingCronRefresh]);
 
   const handleRunTask = (name: string) => {
-    setRunningTasks(prev => new Set(prev).add(name));
     wsClient.send({
       action: 'task_do',
       config_data: name
@@ -208,6 +206,10 @@ const TaskMonitor: React.FC = () => {
 
   const handleCloseTaskSuccessDialog = () => {
     setShowTaskSuccessDialog(false);
+  };
+
+  const handleCloseTaskErrorDialog = () => {
+    setShowTaskErrorDialog(false);
   };
 
   const formatTime = (timeString: string) => {
@@ -262,11 +264,10 @@ const TaskMonitor: React.FC = () => {
                   <td>{formatTime(task.LastStart)}</td>
                   <td>
                     <button
-                      className={`run-button ${runningTasks.has(task.UUID) ? 'running' : ''}`}
+                      className="run-button"
                       onClick={() => handleRunTask(task.UUID)}
-                      disabled={runningTasks.has(task.UUID)}
                     >
-                      {runningTasks.has(task.UUID) ? '正在运行' : '运行'}
+                      运行
                     </button>
                   </td>
                 </tr>
@@ -299,6 +300,14 @@ const TaskMonitor: React.FC = () => {
         message={`任务 "${successTaskName}" 已成功执行!`}
         onClose={handleCloseTaskSuccessDialog}
         visible={showTaskSuccessDialog}
+      />
+
+      {/* 任务执行错误提示框 */}
+      <AlertDialog
+        title="任务执行失败"
+        message={errorMessage}
+        onClose={handleCloseTaskErrorDialog}
+        visible={showTaskErrorDialog}
       />
     </div>
   );

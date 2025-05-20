@@ -167,18 +167,13 @@
   transition: all 0.3s;
 }
 
-.run-button:hover:not(:disabled) {
+.run-button:hover {
   background-color: #40a9ff;
 }
 
 .run-button:disabled {
   background-color: #d9d9d9;
   cursor: not-allowed;
-}
-
-.run-button.running {
-  background-color: #d9d9d9;
-  color: rgba(0, 0, 0, 0.25);
 }
 
 @media (max-width: 768px) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { wsClient } from '../services/wsClient';
-import { ConfigMeta, ConfigType, InspectorConfig, ResponseMsg } from '../types/config';
+import { ConfigMeta, ConfigType, InspectorConfig, ResponseMsg, Identity } from '../types/config';
 import DBConfigDetail from './config-details/DBConfigDetail';
 import LogConfigDetail from './config-details/LogConfigDetail';
 import AlertConfigDetail from './config-details/AlertConfigDetail';
@@ -33,6 +33,19 @@ const MENU_ITEMS: MenuItem[] = [
 interface ConfigTreeProps {
   onLogout: () => void;
 }
+
+// 辅助函数：将 InspectorConfig 的 Children 对象转换为数组
+const transformInspectorChildren = (node: InspectorConfig): InspectorConfig => {
+  let childrenArray: InspectorConfig[] = [];
+  if (node.Children && typeof node.Children === 'object' && !Array.isArray(node.Children)) {
+    childrenArray = Object.values(node.Children as Record<string, InspectorConfig>)
+      .map(child => transformInspectorChildren(child)); // 递归转换子节点的 Children
+  }
+  return {
+    ...node,
+    Children: childrenArray.length > 0 ? childrenArray : undefined // undefined if no children to match type InspectorConfig[] | undefined
+  };
+};
 
 // 添加辅助函数，用于将ConfigType映射到ConfigMeta中的字段名
 const getFieldNameForConfigType = (type: ConfigType): keyof ConfigMeta | null => {
@@ -115,9 +128,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
           console.log('配置数据有效，尝试更新状态');
           console.log('配置数据字段:', Object.keys(meta.config_data));
           
-          // 直接尝试使用响应的config_data
-          setConfigData(meta.config_data);
-          console.log('状态更新后的ConfigData:', meta.config_data);
+          let transformedData = { ...meta.config_data };
+          if (transformedData.InspNodes && Array.isArray(transformedData.InspNodes)) {
+            transformedData.InspNodes = transformedData.InspNodes.map(transformInspectorChildren);
+          }
+          setConfigData(transformedData as ConfigMeta);
+          console.log('状态更新后的ConfigData:', transformedData);
           setError(null);
         } else {
           console.error('无效的配置元数据格式:', meta);
@@ -160,13 +176,18 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
             return currentConfigData; // 如果类型未知，返回当前状态
           }
 
+          let newSpecificConfigData = message.config_data;
+          if (fieldName === 'InspNodes' && Array.isArray(newSpecificConfigData)) {
+            newSpecificConfigData = newSpecificConfigData.map(transformInspectorChildren);
+          }
+
           // 如果 currentConfigData 为 null，则基础对象为空对象 {}
           // 否则，使用 currentConfigData 作为基础
           const baseConfigData = currentConfigData || {};
           
           const newConfigData = {
             ...baseConfigData,
-            [fieldName]: message.config_data // 更新或添加特定类型的配置数据
+            [fieldName]: newSpecificConfigData // 更新或添加特定类型的配置数据
           };
           
           console.log(`已更新 ${message.config_type} (${fieldName}) 的配置数据. 新的configData:`, newConfigData);
@@ -528,11 +549,12 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Name: '',
           Cron: '',
-          LogID: { ID: 0, Name: '' },
-          AlertID: {ID: 0, Name: ''},
+          AllInspector: false, 
+          LogID: { ID: 0, Name: '' }, 
+          AlertID: { ID: 0, Name: '' },
           TargetDB: [],
           Todo: [],
-          NotTodo: []
+          NotTodo: null 
         };
       case 'agent_config':
         return {

@@ -241,7 +241,7 @@ const identityArrayFields: Record<string, { type: ConfigType }> = {
   'KBase': { type: 'kbase_config' },
   'AgentID': { type: 'agent_config' }, // AgentTaskConfig 中的 AgentID
   'AlertID': { type: 'alert_config' },
-  'KBaseAgentID': { type: 'agent_config' },
+  'KbaseAgentID': { type: 'agent_config' },
 
   // KnowledgeBaseConfig 相关字段
   'AgentID_kbase': { type: 'agent_config' }, // 用于区分 KnowledgeBaseConfig 的 AgentID
