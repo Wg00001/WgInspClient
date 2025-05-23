@@ -126,11 +126,17 @@ const TaskMonitor: React.FC = () => {
     // 处理任务执行响应
     const handleTaskDoResponse = (message: any) => {
       const taskId = message.config_data;
+      // 从运行中集合中移除任务
+      setRunningTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+
       const currentTasks = tasksRef.current;
       const taskName = currentTasks.find(task => task.UUID === taskId)?.TaskName || taskId;
       
       if (!message.success) {
-        // 提取错误信息的第一行作为简短提示
         const errorLines = message.message.split('\n');
         const shortError = errorLines[0].trim();
         setErrorMessage(`${shortError}\n详细错误信息请前往告警器获取`);
@@ -172,10 +178,17 @@ const TaskMonitor: React.FC = () => {
     };
   }, [pendingCronRefresh]);
 
-  const handleRunTask = (name: string) => {
+  const handleRunTask = (uuid: string) => {
+    // 将任务添加到运行中集合
+    setRunningTasks(prev => {
+      const newSet = new Set(prev);
+      newSet.add(uuid);
+      return newSet;
+    });
+    
     wsClient.send({
       action: 'task_do',
-      config_data: name
+      config_data: uuid
     });
   };
 
@@ -266,8 +279,9 @@ const TaskMonitor: React.FC = () => {
                     <button
                       className="run-button"
                       onClick={() => handleRunTask(task.UUID)}
+                      disabled={runningTasks.has(task.UUID)}
                     >
-                      运行
+                      {runningTasks.has(task.UUID) ? '正在运行' : '运行'}
                     </button>
                   </td>
                 </tr>
