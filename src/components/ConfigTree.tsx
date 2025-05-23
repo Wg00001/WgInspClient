@@ -549,12 +549,11 @@ const ConfigTree: React.FC<ConfigTreeProps> = ({ onLogout }) => {
         return {
           Name: '',
           Cron: '',
-          AllInspector: false, 
           LogID: { ID: 0, Name: '' }, 
           AlertID: { ID: 0, Name: '' },
           TargetDB: [],
           Todo: [],
-          NotTodo: null 
+          NotTodo: [] 
         };
       case 'agent_config':
         return {

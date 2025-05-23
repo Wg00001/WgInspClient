@@ -242,6 +242,7 @@ const identityArrayFields: Record<string, { type: ConfigType }> = {
   'AgentID': { type: 'agent_config' }, // AgentTaskConfig 中的 AgentID
   'AlertID': { type: 'alert_config' },
   'KbaseAgentID': { type: 'agent_config' },
+  'KBaseAgentID': { type: 'agent_config' },
 
   // KnowledgeBaseConfig 相关字段
   'AgentID_kbase': { type: 'agent_config' }, // 用于区分 KnowledgeBaseConfig 的 AgentID
@@ -365,6 +366,14 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   // 准备提交前的数据处理
   const prepareDataForSubmit = (data: any) => {
     const processedData = { ...data }; // Create a shallow copy
+    
+    // 保护 Parent 和 Children 字段
+    if (processedData.Parent) {
+      processedData.Parent = config.Parent;
+    }
+    if (processedData.Children) {
+      processedData.Children = config.Children;
+    }
     
     // 确保所有数字字段都是数字类型
     Object.keys(numericFields).forEach(field => {
@@ -772,6 +781,18 @@ const ConfigEditForm: React.FC<ConfigEditFormProps> = ({ config, onCancel, onSav
   };
 
   const renderField = (field: string, value: any, label: string) => {
+    // 保护 Parent 和 Children 字段
+    if (field === 'Parent' || field === 'Children') {
+      return (
+        <div className="form-group" key={field}>
+          <label>{label}</label>
+          <div className="form-control-static">
+            {field === 'Parent' ? (value?.Name || '-') : (Array.isArray(value) ? value.length : 0)}
+          </div>
+        </div>
+      );
+    }
+
     // 处理数字类型字段
     if (field in numericFields) {
       return renderNumericField(field, value, label);

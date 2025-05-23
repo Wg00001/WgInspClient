@@ -37,28 +37,11 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
   tdClassName,
   level = 0
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editSQL, setEditSQL] = useState(config.SQL);
-  const [editAlertWhen, setEditAlertWhen] = useState(config.AlertWhen || '');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
 
-  // 编辑弹窗
-  const [showEditModal, setShowEditModal] = useState(false);
-
   const handleEdit = () => {
-    setEditSQL(config.SQL);
-    setEditAlertWhen(config.AlertWhen || '');
-    setShowEditModal(true);
-  };
-
-  const handleEditSave = () => {
-    onEdit({ ...config, SQL: editSQL, AlertWhen: editAlertWhen });
-    setShowEditModal(false);
-  };
-
-  const handleEditCancel = () => {
-    setShowEditModal(false);
+    onEdit(config);
   };
 
   const handleCreate = () => {
@@ -130,39 +113,7 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
           <button onClick={handleCreate} className="btn-create">创建</button>
         </td>
       </tr>
-      {/* 编辑弹窗 */}
-      {showEditModal && (
-        <tr>
-          <td colSpan={6}>
-            <div className="modal-overlay" style={{ zIndex: 2000 }}>
-              <div className="modal-content" style={{ minWidth: 400 }}>
-                <h3>编辑巡检配置</h3>
-                <div className="form-group">
-                  <label>SQL</label>
-                  <textarea
-                    value={editSQL}
-                    onChange={e => setEditSQL(e.target.value)}
-                    style={{ width: '100%', minHeight: 60 }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>告警条件</label>
-                  <textarea
-                    value={editAlertWhen}
-                    onChange={e => setEditAlertWhen(e.target.value)}
-                    style={{ width: '100%', minHeight: 40 }}
-                  />
-                </div>
-                <div className="modal-actions">
-                  <button onClick={handleEditCancel} className="btn-cancel">取消</button>
-                  <button onClick={handleEditSave} className="btn-edit">保存</button>
-                  <button onClick={handleDelete} className="btn-delete">删除</button>
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      )}
+
       {/* 详情弹窗 */}
       {showDetail && (
         <tr>
@@ -188,6 +139,7 @@ const InspectorConfigRow: React.FC<InspectorConfigRowProps> = ({
           </td>
         </tr>
       )}
+
       {/* 删除确认弹窗 */}
       {showDeleteConfirm && (
         <tr>

@@ -26,6 +26,7 @@ const InspectorConfigTable: React.FC<InspectorConfigTableProps> = ({ data, onEdi
       const hasChildren = node.Children && node.Children.length > 0;
       const canDelete = !hasChildren;
       const canEdit = true;
+
       return [
         state.editing ? (
           <tr key={`edit-${node.ID}`} className={level > 0 ? `child-node-row child-node-level-${Math.min(level, 3)}` : ""}>
